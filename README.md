@@ -87,3 +87,52 @@ Version 1 remains unchanged. Version 2 additionally requires `configuration_sche
 These three schema roles use the host-compatible scalar profile: root `type: "object"`, actual JSON-object `properties`, explicit unique `required` array and `additionalProperties: false`. Configuration/resource fields support string, boolean, integer and finite number; credential fields support strings only. Fields support bounded strict typed enums, string lengths (0–4096), finite ordered numeric bounds, and plain-text titles/descriptions. Nested values, nulls, defaults, references, regexes and composition keywords reject this profile. `ConfigurationSchema::validateValues` mirrors host value validation. Secrets remain vault-owned; the schema does not carry credential values.
 
 Run `php tests/manifest-v2.php` for profile checks and `php tests/manifest-v2-docker.php` for actual version-2 build/certification/readiness. The existing LifeFile synthetic recipe remains manifest version 1. Its package ZIP can be checked with `php tests/lifefile-docker.php /path/to/lifefile.zip`.
+
+## Synthetic callbacks and replay
+
+`bin/callback-receiver.php` is a separate localhost simulator for host-owned callback responsibilities. Configure `SYNTHETIC_CALLBACK_CONFIG` to a private JSON file outside package source. It contains a private `state` directory, distinct 64-hex `payload_key_hex` and `replay_key_hex`, and an `endpoints` map keyed by random 32-hex endpoint IDs. Each endpoint has a random `signing_key` of at least 32 characters, `package_id`, organization/location/connection/environment IDs, `provider_account_handle`, `execution_revision`, and a trusted `references` map. Reference entries are lists of exact originating scope plus `order_handle`, `attempt_handle` and `execution_revision`. Production environments are rejected.
+
+```sh
+SYNTHETIC_CALLBACK_CONFIG=/private/path/callbacks.json \
+  php -S 127.0.0.1:19083 bin/callback-receiver.php
+php bin/callback-simulator.php --config /private/path/callbacks.json \
+  --endpoint ENDPOINT_ID --url http://127.0.0.1:19083 \
+  --delivery synthetic-delivery-a --file /private/path/synthetic-event.json
+php tests/callbacks.php
+php tests/callbacks-http.php
+```
+
+The synthetic body is `{ "external_reference": "synthetic-reference", "events": [...] }`. The simulator signs timestamp, delivery ID and exact bytes with per-endpoint HMAC. Timestamp skew, body limits and JSON shape are bounded. The receiver persists encrypted bodies and safe metadata, deduplicates stable account/environment deliveries across restarts and releases, and preserves the original order, attempt and decoder revision. Unmatched or ambiguous references remain held; payload-provided tenant identifiers cannot change scope.
+
+Replay uses `SyntheticReplayAuthority` to issue short-lived `callback.replay` grants, signed with the separate local replay key. Claims bind actor, receipt, package, organization, location, connection, environment and expected receipt revision. `POST /receipts/{receipt}/replay` accepts that bearer grant once per revision and returns approved decode input plus lineage, with `applied: false`. It never invokes a domain mutation. The issuer is a trusted test utility: the production host must check actor permission and scope before issuing replay authority. No public grant-issuance endpoint exists.
+
+These are local receipt/auth/replay demonstrations, not replacement production webhooks. Multi-file JSON/object writes are not crash-atomic, and replay preparation has no transactional dispatch outbox. Crash reconciliation, retention, vendor-specific authentication, mixed/out-of-order batches, callback routing between legacy and package implementations, decoder availability and real host application remain delivery gates.
+
+## Remaining acceptance gates
+
+| Gate | Local evidence | Still required |
+| --- | --- | --- |
+| Source and protocol | Deterministic ZIPs, strict DTO/schema tests, container conformance | Approved dependency mirrors/resolution, full canonical contracts and compatibility policy |
+| Isolation | Nonroot/networkless/read-only disposable containers; real timeout and worker-loss cleanup tests | Production IAM/egress boundary, runtime-pool fairness, scale, OOM and restore drills |
+| Release control | Local immutable image build/certification/deployment with separate role tokens | Durable distributed jobs/reconciliation, independent production approver and promotion/rollback controls |
+| Scoped services | Synthetic grants and broker request protocol | Real host authorization/transport/ownership evidence; credential primitives and governed resource workflows |
+| Callbacks | Local HMAC, encrypted receipts, scope, cross-release dedupe and replay lineage | Vendor authentication, durable receipt/outbox transactions, callback ownership cutover and real host work-item/review flows |
+| UI | Host/client origin/window/nonce/session/release/revision tests | Immutable separate-origin asset publishing, CSP/browser QA and backend-bound session authorization |
+| LifeFile | Reviewed synthetic eleven-operation certification recipe | Full characterization parity inventory, vendor sandbox verification, import/mapping workflows and operational recovery |
+| Developer delivery | No private application dependencies; runnable local examples | Clean external-developer installation, versioned references, hosted synthetic sandbox and support/deprecation policy |
+
+The production exit gate in the proposal remains broader than these local demonstrations. Installation and certification never imply pharmacy opt-in or vendor readiness.
+
+## Real host/runtime fixture client
+
+`HostRuntimeClient` is reusable trusted PHP test/host code. Its runtime URL and bearer token come from operator configuration, while the complete invocation—including a real host-issued active service grant—comes from the host. It validates the invocation/result protocol, verifies TLS for HTTPS, disables redirects, bounds bodies/deadlines and sends exactly one request. Transport loss or an invalid response becomes an explicit unknown outcome without resubmission.
+
+```sh
+# Export PACKAGE_RUNTIME_URL and PACKAGE_RUNTIME_TOKEN from a private environment.
+# The prepared input file must be private and its service grant must already exist in the host ledger.
+php bin/runtime-check.php --expect remote_acceptance < /private/path/invocation.json
+```
+
+The CLI prints only kind, reason code and an optional opaque external-reference handle. It never echoes the invocation, service grant, runtime token or arbitrary result/vendor bodies. It issues no grants and does not retry.
+
+`php tests/host-runtime-client.php` tests the actual HTTP client/CLI, response validation, accepted-then-lost transport behavior and absence of retries. A full Laravel-host integration proof additionally requires a host-created connection, exact execution binding and active scoped invocation in the same database used by the host's service endpoint. Run the dispatch from a CLI/queue process; a single-threaded PHP development server cannot synchronously dispatch and serve its own broker callback. SQLite `:memory:` in a separate process cannot supply that shared ledger. Use an isolated shared MySQL test database or the authorized local fixture database, and verify the path container → trusted dispatcher → host grant broker → synthetic HTTP vendor → opaque ownership record.

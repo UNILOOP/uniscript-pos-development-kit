@@ -49,7 +49,8 @@ final class Archive
                 if (preg_match('~(?:^|/)(?:vendor|node_modules|auth\.json|composer\.phar|artisan|\.env)(?:/|$)~i', $name) || preg_match('~(?:^|/)(?:env|credentials)(?:\.|$)~i', $name)) { throw new InvalidArgumentException('forbidden_source'); }
                 $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
                 if (!in_array($extension, ['php','json','md','txt','xml','csv','yaml','yml','js','jsx','ts','tsx','css','scss','html','svg','lock'], true) && !in_array(strtolower(basename($name)), ['license','notice','readme','changelog'], true)) { throw new InvalidArgumentException('unsupported_source'); }
-                $contents = $zip->getFromIndex($index, 8388609);
+                // libzip reserves the requested length, even for tiny members.
+                $contents = $zip->getFromIndex($index, $entry['size']+1);
                 if ($contents === false || strlen($contents) !== $entry['size'] || hash('crc32b', $contents) !== sprintf('%08x', $entry['crc'])) { throw new InvalidArgumentException('entry_integrity'); }
                 if (str_contains($contents, "\0") || preg_match('/\A(?:\x7fELF|MZ|#!)|-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----|\b(?:AKIA|ASIA)[A-Z0-9]{16}\b|\bgh[pousr]_[A-Za-z0-9]{36,}\b/', $contents)) { throw new InvalidArgumentException('binary_or_embedded_credential'); }
                 if (microtime(true)-$start > 15) { throw new InvalidArgumentException('inspection_timeout'); }

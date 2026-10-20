@@ -10,7 +10,9 @@ $root = realpath($argv[1] ?? '') ?: throw new InvalidArgumentException('usage: p
 $output = $argv[2] ?? throw new InvalidArgumentException('output_required');
 $manifest = Manifest::read($root);
 $files = [];
-$iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+$source = new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS);
+$filtered = new RecursiveCallbackFilterIterator($source, static fn(SplFileInfo $entry):bool => !in_array($entry->getFilename(), ['.git', '.gitignore', '.gitattributes', '.gitmodules'], true));
+$iterator = new RecursiveIteratorIterator($filtered);
 foreach ($iterator as $file) {
     if ($file->isLink() || !$file->isFile()) { throw new InvalidArgumentException('regular_files_only'); }
     $relative = substr($file->getPathname(), strlen($root)+1);
