@@ -1,0 +1,7 @@
+{
+  "name": "uniscript/starter",
+  "type": "library",
+  "require": {
+    "php": "^8.4"
+  }
+}

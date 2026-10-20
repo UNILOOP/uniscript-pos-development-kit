@@ -1,0 +1,22 @@
+services:
+  runtime:
+    profiles: [runtime]
+    image: ${PACKAGE_IMAGE:?Build and certify a package image first}
+    user: "10001:10001"
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 32
+    mem_limit: 256m
+    cpus: 0.5
+    tmpfs: [/tmp:rw,noexec,nosuid,size=16m,uid=10001,gid=10001]
+    environment:
+      EXECUTION_REVISION: ${EXECUTION_REVISION:?required}
+      INVOCATION_TOKEN: ${INVOCATION_TOKEN:?required}
+      HOST_SERVICES_URL: ""
+    ports: ["127.0.0.1:${RUNTIME_PORT:-18080}:8080"]
+    networks: [package-isolated]
+networks:
+  package-isolated:
+    internal: true

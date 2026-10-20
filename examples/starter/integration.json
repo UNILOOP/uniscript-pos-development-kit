@@ -1,0 +1,62 @@
+{
+  "manifest_version": 1,
+  "package_id": "uniscript/starter",
+  "publisher": "uniscript",
+  "integration_key": "example-starter",
+  "display_name": "Synthetic Starter",
+  "vendor_family": "synthetic",
+  "version": "1.0.0",
+  "sdk_version": "^1.0",
+  "protocol_version": "1",
+  "runtime": {
+    "entrypoint": "src/runtime.php",
+    "php": "^8.4",
+    "extensions": [],
+    "profile": "standard"
+  },
+  "operations": [
+    {
+      "key": "identity.describe",
+      "handler": "Example\\Handler::run",
+      "input_schema": "schemas/input.json",
+      "output_schema": "schemas/output.json",
+      "required_capabilities": []
+    },
+    {
+      "key": "health.probe",
+      "handler": "Example\\Handler::run",
+      "input_schema": "schemas/input.json",
+      "output_schema": "schemas/output.json",
+      "required_capabilities": []
+    },
+    {
+      "key": "configuration.validate",
+      "handler": "Example\\Handler::run",
+      "input_schema": "schemas/input.json",
+      "output_schema": "schemas/output.json",
+      "required_capabilities": []
+    },
+    {
+      "key": "orders.validate",
+      "handler": "Example\\Handler::run",
+      "input_schema": "schemas/input.json",
+      "output_schema": "schemas/output.json",
+      "required_capabilities": []
+    },
+    {
+      "key": "orders.submit",
+      "handler": "Example\\Handler::run",
+      "input_schema": "schemas/input.json",
+      "output_schema": "schemas/output.json",
+      "required_capabilities": []
+    }
+  ],
+  "capabilities": {
+    "required": [],
+    "optional": []
+  },
+  "support": {
+    "email": "integrations@example.invalid",
+    "documentation": "https://example.invalid/integration-kit"
+  }
+}
