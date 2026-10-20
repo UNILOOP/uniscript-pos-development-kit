@@ -16,7 +16,7 @@ final class Manifest
         $keys = ['manifest_version', 'package_id', 'publisher', 'integration_key', 'display_name', 'vendor_family', 'version', 'sdk_version', 'protocol_version', 'runtime', 'operations', 'capabilities', 'support'];
         $version=$manifest['manifest_version']??null;
         $required=$keys;
-        if($version===2){$required=[...$required,'configuration_schema','credential_schema'];$keys=[...$keys,'configuration_schema','credential_schema','resource_schemas'];}
+        if($version===2){$required=[...$required,'configuration_schema','credential_schema'];$keys=[...$keys,'configuration_schema','credential_schema','resource_schemas','ui'];}
         if (!is_array($manifest) || array_diff($required, array_keys($manifest)) !== [] || array_diff(array_keys($manifest), $keys) !== []) { throw new InvalidArgumentException('manifest_fields'); }
         if (!in_array($manifest['manifest_version'],[1,2],true) || $manifest['protocol_version'] !== '1' || $manifest['sdk_version'] !== '^1.0' || !preg_match('/\A[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*\z/D', $manifest['package_id']) || !str_starts_with($manifest['package_id'], $manifest['publisher'].'/') || !preg_match('/\A\d+\.\d+\.\d+\z/D', $manifest['version'])) { throw new InvalidArgumentException('manifest_identity'); }
         if (($manifest['runtime']['php'] ?? null) !== '^8.4' || ($manifest['runtime']['profile'] ?? null) !== 'standard') { throw new InvalidArgumentException('manifest_runtime'); }
@@ -42,6 +42,7 @@ final class Manifest
                 foreach(get_object_vars($object->resource_schemas) as $name=>$path){if(!preg_match('/\A[a-z][a-z0-9_]{0,63}\z/D',$name)){throw new InvalidArgumentException('resource_schema_name');}self::schemaFile($root,$path,false,true);}
             }
         }
+        StaticUi::inspect($root,$manifest);
         foreach (['composer.json', 'composer.lock'] as $file) {
             JsonDocument::decode(file_get_contents($root.'/'.$file), true);
         }

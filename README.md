@@ -170,3 +170,25 @@ php bin/runtime-check.php --expect remote_acceptance < /private/path/invocation.
 The CLI prints only kind, reason code and an optional opaque external-reference handle. It never echoes the invocation, service grant, runtime token or arbitrary result/vendor bodies. It issues no grants and does not retry.
 
 `php tests/host-runtime-client.php` tests the actual HTTP client/CLI, response validation, accepted-then-lost transport behavior and absence of retries. A full Laravel-host integration proof additionally requires a host-created connection, exact execution binding and active scoped invocation in the same database used by the host's service endpoint. Run the dispatch from a CLI/queue process; a single-threaded PHP development server cannot synchronously dispatch and serve its own broker callback. SQLite `:memory:` in a separate process cannot supply that shared ledger. Use an isolated shared MySQL test database or the authorized local fixture database, and verify the path container → trusted dispatcher → host grant broker → synthetic HTTP vendor → opaque ownership record.
+
+### Optional static package screens (local synthetic profile)
+
+Manifest v2 may declare `"ui":{"profile":"static-v1","entrypoint":"ui/index.html"}`. All files below `ui/` must be precompiled HTML, JavaScript or CSS (100 files / 2 MiB total). The builder and independent certifier hash the sorted relative path → SHA-256 map; old packages retain the canonical empty UI digest. No uploaded code runs in the host and uploading a screen does not rebuild the host frontend. `examples/custom-ui` demonstrates the public bridge with only nonsensitive diagnostics.
+
+After the host approves/deploys an exact execution, run `php artisan pos:package-ui-assets EXECUTION_UUID` in the host. It exports verified static bytes only. Start one trusted static server per execution, using a different port for each:
+
+```sh
+mkdir -p /tmp/uniscript-empty-ui-root
+PACKAGE_UI_ROOT=/absolute/exported/execution/digest \
+PACKAGE_UI_ORIGIN=http://localhost:19110 \
+PACKAGE_UI_HOST_ORIGIN=http://127.0.0.1:8000 \
+php -S 127.0.0.1:19110 -t /tmp/uniscript-empty-ui-root bin/ui-assets.php
+```
+
+On Windows PowerShell, set those three `$env:PACKAGE_UI_*` variables before the same `php -S` command; use an empty local directory for `-t`. Linux/macOS may alternatively use `127.0.0.2` only when already configured; no loopback aliases are added. The asset process needs only these variables and the exported files, and must not inherit host credentials. The router never bootstraps Laravel, serves PHP, or sets cookies. Host configuration requires `POS_PACKAGE_UI_ENABLED=true`, a `POS_PACKAGE_UI_ORIGINS` JSON map from exact execution UUID to its origin, and a null/empty session cookie domain. With `localhost` assets the host app must use `127.0.0.1`; differing ports alone do not separate cookies. Multiple executions cannot share one configured origin.
+
+Host sessions stay on the authenticated CSRF-protected host origin; asset URLs contain no session or nonce. Every bridge query/action reauthorizes actor, organization, connection revisions, exact approved/certified artifacts, active deployment and static hashes. Only `context.read` and `diagnostics.refresh` are available; credentials, raw payloads, catalog/clinical records and domain mutations are unavailable. Host frontend bundling happens once when installing the generic shell; subsequent package uploads need no host route generation or frontend build.
+
+CSP and iframe sandbox block fetch, images, forms, child frames, workers, popups and top navigation. Browsers do not reliably enforce CSP `navigate-to` for a scripted frame's own navigation. This profile therefore does **not** claim complete browser egress isolation and must not receive sensitive data. Hosted origins, stronger browser egress controls and sensitive custom-screen capabilities remain acceptance gates.
+
+Verification: `php tests/static-ui.php`, `php tests/static-ui-http.php`, and `php tests/static-ui-docker.php /absolute/custom-ui.zip` (Docker test). The real HTTP fixture confirms Host/CSP/hash/path guards; the Docker fixture independently rejects forged UI digest evidence.

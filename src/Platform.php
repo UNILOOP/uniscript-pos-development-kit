@@ -89,7 +89,7 @@ final class Platform
         if(!preg_match('/\Asha256:[a-f0-9]{64}\z/D',$baseId)){throw new RuntimeException('base_image_not_content_addressed');}
         mkdir($job.'/src');mkdir($job.'/bin');
         // Only the SDK and runtime supervisor enter the image, never platform keys or controller source.
-        $runtimeFiles=['Invocation.php','Result.php','Services.php','ScopedServices.php','Runtime.php','Manifest.php','SchemaValidator.php','JsonValue.php','JsonDocument.php','ConfigurationSchema.php','ResourceSchema.php'];
+        $runtimeFiles=['Invocation.php','Result.php','Services.php','ScopedServices.php','Runtime.php','Manifest.php','SchemaValidator.php','JsonValue.php','JsonDocument.php','ConfigurationSchema.php','ResourceSchema.php','StaticUi.php'];
         foreach($runtimeFiles as $file){copy($root.'/src/'.$file,$job.'/src/'.$file);}
         foreach(['invoke.php','runtime-server.php'] as $file){copy($root.'/bin/'.$file,$job.'/bin/'.$file);}
         copy($root.'/bootstrap.php',$job.'/bootstrap.php');copy($root.'/docker/Dockerfile',$job.'/Dockerfile');
@@ -104,7 +104,7 @@ final class Platform
             'supervisor_sha256'=>self::treeHash($job.'/bin'),
             'base_image_sha256'=>substr($baseId,7),
             'executable_image_sha256'=>substr($image,7),
-            'ui_sha256'=>hash('sha256',''),
+            'ui_sha256'=>StaticUi::inspect($job.'/package',$manifest)['sha256'],
         ];
         $record['_manifest']=$manifest;$record['_work']=$job;$record['status']='succeeded';return $record;
     }
@@ -116,6 +116,7 @@ final class Platform
         // Reinspect source independently from the builder, and inspect the actual immutable image.
         $inspection=$this->state.'/work/cert-'.$record['id'].'-'.bin2hex(random_bytes(4));
         $manifest=Archive::unpack($this->state.'/sources/'.$build['id'].'.zip',$inspection,$record['source_sha256']);
+        if(!hash_equals(StaticUi::inspect($inspection,$manifest)['sha256'],$record['digests']['ui_sha256'])){throw new RuntimeException('ui_artifact_mismatch');}
         $image='sha256:'.$record['digests']['executable_image_sha256'];
         $actual=json_decode(Process::run(['docker','image','inspect',$image],30),true,32,JSON_THROW_ON_ERROR)[0];
         if($actual['Id']!==$image||($actual['Config']['Labels']['org.uniscript.source']??null)!==$record['source_sha256']||($actual['Config']['Labels']['org.uniscript.execution']??null)!==$record['execution_uuid']){throw new RuntimeException('image_provenance_mismatch');}
