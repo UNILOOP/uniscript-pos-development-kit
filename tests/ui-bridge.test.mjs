@@ -77,3 +77,12 @@ test('package client rejects spoofed responses and times out safely', async () =
     assert.equal(client.receive({ origin: 'https://host.example', source: peer, data: { ...reply, execution_revision: 'other' } }), false);
     await assert.rejects(promise, /bridge.timeout/); client.close();
 });
+
+test('dedicated execution localhost origins are supported without accepting arbitrary insecure domains', () => {
+    const document = { createElement: () => ({ setAttribute() {} }) };
+    const packageOrigin = 'http://pkg-11111111-1111-4111-8111-111111111111.localhost:19110';
+    assert.doesNotThrow(() => createPackageFrame(document, { assetUrl: packageOrigin + '/index.html', packageOrigin, hostOrigin: 'http://127.0.0.1:8000', title: 'Synthetic' }));
+    for (const bad of ['http://pkg-attacker.example:19110', 'http://pkg-not-a-uuid.localhost:19110']) {
+        assert.throws(() => createPackageFrame(document, { assetUrl: bad + '/index.html', packageOrigin: bad, hostOrigin: 'http://127.0.0.1:8000', title: 'Synthetic' }));
+    }
+});

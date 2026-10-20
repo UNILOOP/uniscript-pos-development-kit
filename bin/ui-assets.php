@@ -8,8 +8,9 @@ function rejectAsset(int $status): never
     http_response_code($status);header('Content-Type: text/plain; charset=utf-8');header('Cache-Control: no-store');echo 'Package screen unavailable.';exit;
 }
 $root=realpath(getenv('PACKAGE_UI_ROOT')?:'');$origin=getenv('PACKAGE_UI_ORIGIN')?:'';$hostOrigin=getenv('PACKAGE_UI_HOST_ORIGIN')?:'';
-if($root===false||!preg_match('/\Ahttp:\/\/(127\.0\.0\.2|localhost):([1-9][0-9]{0,4})\z/D',$origin,$match)||!preg_match('/\Ahttp:\/\/(?:127\.0\.0\.1|localhost)(?::[1-9][0-9]{0,4})?\z/D',$hostOrigin)){rejectAsset(503);}
-if(($match[1]==='localhost'&&!str_starts_with($hostOrigin,'http://127.0.0.1'))||($_SERVER['HTTP_HOST']??'')!==$match[1].':'.$match[2]||($_SERVER['SERVER_ADDR']??($match[1]==='localhost'?'127.0.0.1':'127.0.0.2'))!==($match[1]==='localhost'?'127.0.0.1':'127.0.0.2')){rejectAsset(421);}
+if($root===false||!preg_match('/\Ahttp:\/\/(pkg-[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}\.localhost):([1-9][0-9]{0,4})\z/D',$origin,$match)||!preg_match('/\Ahttp:\/\/127\.0\.0\.1(?::[1-9][0-9]{0,4})?\z/D',$hostOrigin)){rejectAsset(503);}
+if(($_SERVER['HTTP_HOST']??'')!==$match[1].':'.$match[2]||($_SERVER['SERVER_ADDR']??'127.0.0.1')!=='127.0.0.1'){rejectAsset(421);}
+if(isset($_SERVER['HTTP_COOKIE'])&&$_SERVER['HTTP_COOKIE']!==''){rejectAsset(421);}
 if(!in_array($_SERVER['REQUEST_METHOD']??'',['GET','HEAD'],true)){rejectAsset(405);}
 $metadata=@file_get_contents($root.'/assets.json',false,null,0,65537);
 if(!is_string($metadata)||strlen($metadata)>65536){rejectAsset(503);}

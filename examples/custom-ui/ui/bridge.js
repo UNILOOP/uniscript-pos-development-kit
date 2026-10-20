@@ -1,6 +1,6 @@
 function origin(value) {
     const parsed = new URL(value);
-    if (parsed.origin !== value || (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(parsed.hostname)))) {
+    if (parsed.origin !== value || (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && (['127.0.0.1', 'localhost', '[::1]'].includes(parsed.hostname) || /^pkg-[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}\.localhost$/.test(parsed.hostname))))) {
         throw new Error('invalid_origin');
     }
     return parsed.origin;

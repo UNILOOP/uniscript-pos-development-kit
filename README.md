@@ -179,13 +179,13 @@ After the host approves/deploys an exact execution, run `php artisan pos:package
 
 ```sh
 mkdir -p /tmp/uniscript-empty-ui-root
-PACKAGE_UI_ROOT=/absolute/exported/execution/digest \
-PACKAGE_UI_ORIGIN=http://localhost:19110 \
+env -i PATH="$PATH" PACKAGE_UI_ROOT=/absolute/exported/execution/digest \
+PACKAGE_UI_ORIGIN=http://pkg-11111111-1111-4111-8111-111111111111.localhost:19110 \
 PACKAGE_UI_HOST_ORIGIN=http://127.0.0.1:8000 \
 php -S 127.0.0.1:19110 -t /tmp/uniscript-empty-ui-root bin/ui-assets.php
 ```
 
-On Windows PowerShell, set those three `$env:PACKAGE_UI_*` variables before the same `php -S` command; use an empty local directory for `-t`. Linux/macOS may alternatively use `127.0.0.2` only when already configured; no loopback aliases are added. The asset process needs only these variables and the exported files, and must not inherit host credentials. The router never bootstraps Laravel, serves PHP, or sets cookies. Host configuration requires `POS_PACKAGE_UI_ENABLED=true`, a `POS_PACKAGE_UI_ORIGINS` JSON map from exact execution UUID to its origin, and a null/empty session cookie domain. With `localhost` assets the host app must use `127.0.0.1`; differing ports alone do not separate cookies. Multiple executions cannot share one configured origin.
+On Windows PowerShell, launch PHP through a `System.Diagnostics.ProcessStartInfo` whose `Environment` is cleared, then add only PATH and those three PACKAGE_UI variables; use an empty local directory for `-t`. Do not start the asset process from an environment containing application credentials. Use the exact execution UUID in the `pkg-<execution UUID>.localhost` hostname; modern browsers resolve this reserved localhost name to loopback. No loopback aliases are added. The asset process needs only these variables and the exported files, and must not inherit host credentials. The router never bootstraps Laravel, serves PHP, or sets cookies. Host configuration requires `POS_PACKAGE_UI_ENABLED=true`, a `POS_PACKAGE_UI_ORIGINS` JSON map from exact execution UUID to its origin, and a null/empty session cookie domain. The host app must use `127.0.0.1`; plain localhost assets are rejected because historical application cookies may exist there. Differing ports alone do not separate cookies. Each execution must have its own exact UUID hostname and cannot share an origin. The trusted asset server rejects every request with a nonempty Cookie header before serving package bytes, including historical parent-domain cookies.
 
 Host sessions stay on the authenticated CSRF-protected host origin; asset URLs contain no session or nonce. Every bridge query/action reauthorizes actor, organization, connection revisions, exact approved/certified artifacts, active deployment and static hashes. Only `context.read` and `diagnostics.refresh` are available; credentials, raw payloads, catalog/clinical records and domain mutations are unavailable. Host frontend bundling happens once when installing the generic shell; subsequent package uploads need no host route generation or frontend build.
 
