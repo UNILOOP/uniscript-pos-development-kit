@@ -17,7 +17,7 @@ function rejects(mixed $value,array|bool $definition):void{global $root;denied(f
 validates(['id'=>'opaque','items'=>[1,2]],['type'=>'object','required'=>['id','items'],'properties'=>['id'=>['type'=>'string'],'items'=>['type'=>'array','items'=>['type'=>'integer'],'minItems'=>1]],'additionalProperties'=>false]);
 rejects([],['type'=>'object','required'=>['id']]);rejects(['id'=>null],['type'=>'object','properties'=>['id'=>['type'=>'string']]]);rejects(['extra'=>1],['type'=>'object','additionalProperties'=>false]);
 rejects([1,'two'],['type'=>'array','items'=>['type'=>'integer']]);rejects([],['type'=>'array','minItems'=>1]);rejects([1,2],['type'=>'array','maxItems'=>1]);
-validates(null,['type'=>['string','null']]);validates('yes',['enum'=>['yes','no']]);rejects('no',['const'=>'yes']);rejects('other',['enum'=>['yes','no']]);
+validates(1.0,['type'=>'integer']);rejects(1.5,['type'=>'integer']);rejects('x',['enum'=>['x','x']]);validates(null,['type'=>['string','null']]);validates('yes',['enum'=>['yes','no']]);rejects('no',['const'=>'yes']);rejects('other',['enum'=>['yes','no']]);
 validates('é',['type'=>'string','minLength'=>1,'maxLength'=>1]);rejects('éé',['maxLength'=>1]);rejects(3,['minimum'=>4]);rejects(5,['maximum'=>4]);
 validates(['id'=>'opaque'],['$defs'=>['id'=>['type'=>'string']],'properties'=>['id'=>['$ref'=>'#/$defs/id']]]);
 schema(['type'=>'string'],'shared.json');validates(['id'=>'opaque'],['properties'=>['id'=>['$ref'=>'shared.json']]]);

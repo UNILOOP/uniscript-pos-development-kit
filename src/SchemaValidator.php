@@ -62,7 +62,7 @@ final class SchemaValidator
             if($types===[]||count(array_unique($types,SORT_REGULAR))!==count($types)){throw new InvalidArgumentException('schema_type');}
             foreach($types as $type){if(!is_string($type)||!in_array($type,['object','array','string','integer','number','boolean','null'],true)){throw new InvalidArgumentException('schema_type');}}
         }
-        if(property_exists($schema,'enum')&&(!is_array($schema->enum)||$schema->enum===[])){throw new InvalidArgumentException('schema_enum');}
+        if(property_exists($schema,'enum')){if(!is_array($schema->enum)||$schema->enum===[]||count($schema->enum)>1000){throw new InvalidArgumentException('schema_enum');}foreach($schema->enum as $index=>$choice){foreach(array_slice($schema->enum,0,$index) as $earlier){if(self::equal($choice,$earlier)){throw new InvalidArgumentException('schema_enum_duplicate');}}}}
         if(property_exists($schema,'required')){if(!is_array($schema->required)||count(array_unique($schema->required,SORT_REGULAR))!==count($schema->required)){throw new InvalidArgumentException('schema_required');}foreach($schema->required as $key){if(!is_string($key)){throw new InvalidArgumentException('schema_required');}}}
         foreach(['minItems','maxItems','minLength','maxLength'] as $key){if(property_exists($schema,$key)&&(!is_int($schema->{$key})||$schema->{$key}<0||$schema->{$key}>1048576)){throw new InvalidArgumentException('schema_bound');}}
         foreach(['minimum','maximum'] as $key){if(property_exists($schema,$key)&&(!is_int($schema->{$key})&&!is_float($schema->{$key}))){throw new InvalidArgumentException('schema_bound');}}
@@ -83,7 +83,7 @@ final class SchemaValidator
         if(isset($schema->{'$ref'})){[$target,$next]=$this->resolve($schema->{'$ref'},$document);$this->check($value,$target,$next,$field,$depth+1);}
         if(property_exists($schema,'type')){
             $types=is_array($schema->type)?$schema->type:[$schema->type];$valid=false;
-            foreach($types as $type){$valid=$valid||match($type){'object'=>$value instanceof stdClass||(is_array($value)&&($value===[]||!array_is_list($value))),'array'=>is_array($value)&&array_is_list($value),'string'=>is_string($value),'integer'=>is_int($value),'number'=>is_int($value)||(is_float($value)&&is_finite($value)),'boolean'=>is_bool($value),'null'=>$value===null};}
+            foreach($types as $type){$valid=$valid||match($type){'object'=>$value instanceof stdClass||(is_array($value)&&($value===[]||!array_is_list($value))),'array'=>is_array($value)&&array_is_list($value),'string'=>is_string($value),'integer'=>is_int($value)||(is_float($value)&&is_finite($value)&&floor($value)===$value),'number'=>is_int($value)||(is_float($value)&&is_finite($value)),'boolean'=>is_bool($value),'null'=>$value===null};}
             if(!$valid){throw new InvalidArgumentException('schema_type:'.$field);}
         }
         if(property_exists($schema,'enum')&&!array_any($schema->enum,static fn(mixed $candidate):bool=>self::equal($value,$candidate))){throw new InvalidArgumentException('schema_enum:'.$field);}
