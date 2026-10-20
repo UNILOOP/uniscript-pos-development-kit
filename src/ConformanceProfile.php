@@ -9,10 +9,10 @@ use RuntimeException;
 /** Trusted synthetic scenarios, selected by platform profile rather than package assertions. */
 final class ConformanceProfile
 {
-    public static function scenarios(string $operation,string $packageId='',int $manifestVersion=1): array
+    public static function scenarios(string $operation,string $packageId='',int $manifestVersion=1,string $packageVersion=''): array
     {
         if($packageId==='uniscript/lifefile'){
-            $fixtures=JsonDocument::decode(file_get_contents(dirname(__DIR__).'/tests/fixtures/lifefile-conformance.json'),true);
+            $fixtures=JsonDocument::decode(file_get_contents(dirname(__DIR__).'/tests/fixtures/'.($packageVersion!==''&&version_compare($packageVersion,'1.0.4','>=')?'lifefile-canonical-conformance.json':'lifefile-conformance.json')),true);
             return $fixtures[$operation]??throw new RuntimeException('trusted_scenario_not_available:'.$operation);
         }
         if($packageId==='uniscript/demo'&&$manifestVersion===2&&in_array($operation,['configuration.validate','health.probe'],true)){return [['input'=>['config'=>['vendor_id'=>'10001','location_id'=>'10002','api_network_id'=>'10003','mode'=>'mock']],'kind'=>'success'],['input'=>['config'=>['vendor_id'=>false,'location_id'=>'10002','api_network_id'=>'10003']],'kind'=>'validation_rejection']];}
@@ -35,6 +35,16 @@ final class ConformanceProfile
     public static function serviceResponse(string $packageId,array $scenario,array $request,SyntheticHost $host):array
     {
         $host->authorize($request);
+        if ($request['service'] === 'http' && $request['action'] === 'request') {
+            foreach ($scenario['expected_http_projection'] ?? [] as $path => $expectedValue) {
+                $actual = $request['arguments'];
+                foreach (explode('.', $path) as $part) {
+                    if (! is_array($actual) || ! array_key_exists($part, $actual)) { throw new RuntimeException('conformance_http_projection_missing:'.$path); }
+                    $actual = $actual[$part];
+                }
+                if ($actual !== $expectedValue) { throw new RuntimeException('conformance_http_projection_mismatch:'.$path); }
+            }
+        }
         $key=$request['service'].'.'.$request['action'];
         if(isset($scenario['services'][$key])){return $scenario['services'][$key];}
         if($packageId==='uniscript/lifefile'&&$key==='http.request'){
@@ -46,9 +56,10 @@ final class ConformanceProfile
         return $host->transport($request);
     }
 
-    public static function verify(string $operation,array $scenario,Result $result,string $packageId):void
+    public static function verify(string $operation,array $scenario,Result $result,string $packageId,array $calls=[]):void
     {
         if($result->kind!==$scenario['kind']){throw new RuntimeException('conformance_unexpected_result:'.$operation);}
+        if (isset($scenario['expected_calls']) && $calls !== $scenario['expected_calls']) { throw new RuntimeException('conformance_service_call_sequence:'.$operation); }
         if($result->kind==='validation_rejection'){return;}
         if($operation==='identity.describe'&&($result->data['package_id']??null)!==$packageId){throw new RuntimeException('conformance_identity');}
         if(in_array($operation,['orders.submit','orders.reconcile','orders.status.update','orders.shipping.update'],true)&&(!is_string($result->data['external_reference_handle']??null)||$result->data['external_reference_handle']==='')){throw new RuntimeException('conformance_acceptance_reference');}

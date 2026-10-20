@@ -124,13 +124,14 @@ final class Platform
         if(hash_file('sha256',$inspection.'/composer.lock')!==$record['digests']['lockfile_sha256']||self::treeHash($build['_work'].'/src')!==$record['digests']['sdk_sha256']||self::treeHash($build['_work'].'/bin')!==$record['digests']['supervisor_sha256']){throw new RuntimeException('artifact_ingredient_mismatch');}
         $host=new SyntheticHost();$tested=[];$observed=[];
         foreach($manifest['operations'] as $operation){
-            foreach(ConformanceProfile::scenarios($operation['key'],$manifest['package_id'],$manifest['manifest_version']) as $scenario){
+            foreach(ConformanceProfile::scenarios($operation['key'],$manifest['package_id'],$manifest['manifest_version'],$manifest['version']) as $scenario){
                 $envelope=$this->syntheticEnvelope($record,$manifest,$operation['key']);
                 $envelope['input']=$scenario['input'];
                 $envelope['service_grant']=$host->grant($envelope,['storage.read','storage.write','resources.read','commands.propose','http.request']);
                 $command=array_merge(['docker','run','--rm','-i'],RuntimeProcess::flags(),['--env','PACKAGE_ROOT=/package','--env','EXECUTION_REVISION='.$record['execution_uuid'],'--env','SERVICE_TRANSPORT=stdio','--entrypoint','timeout',$image,'-s','KILL','30','php','-d','display_errors=0','-d','log_errors=0','/opt/kit/bin/invoke.php']);
-                $result=RuntimeProcess::invoke($command,$envelope,static function(array $request)use($host,&$observed,$scenario,$manifest,$inspection):array{if(($request['service']??null)==='storage'&&($request['action']??null)==='write'&&($manifest['manifest_version']??null)===2){$resource=$request['arguments']['key']??'';$path=$manifest['resource_schemas'][$resource]??throw new RuntimeException('resource_not_declared');$definition=JsonDocument::decode(file_get_contents($inspection.'/'.$path));ResourceSchema::validateValues($definition,$request['arguments']['value']??[]);}$response=ConformanceProfile::serviceResponse($manifest['package_id'],$scenario,$request,$host);$observed[]=$request['service'].'.'.$request['action'];return $response;});
-                ConformanceProfile::verify($operation['key'],$scenario,$result,$manifest['package_id']);
+                $scenarioCalls=[];
+                $result=RuntimeProcess::invoke($command,$envelope,static function(array $request)use(&$scenarioCalls,$host,&$observed,$scenario,$manifest,$inspection):array{if(($request['service']??null)==='storage'&&($request['action']??null)==='write'&&($manifest['manifest_version']??null)===2){$resource=$request['arguments']['key']??'';$path=$manifest['resource_schemas'][$resource]??throw new RuntimeException('resource_not_declared');$definition=JsonDocument::decode(file_get_contents($inspection.'/'.$path));ResourceSchema::validateValues($definition,$request['arguments']['value']??[]);}$response=ConformanceProfile::serviceResponse($manifest['package_id'],$scenario,$request,$host);$observed[]=$request['service'].'.'.$request['action'];$scenarioCalls[]=$request['service'].'.'.$request['action'];return $response;});
+                ConformanceProfile::verify($operation['key'],$scenario,$result,$manifest['package_id'],$scenarioCalls);
             }
             $tested[]=$operation['key'];
         }
