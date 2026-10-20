@@ -31,10 +31,11 @@ try {
     $check($mock->handle('GET', '/metrics', $headers, '')['body']['orders'] === 1, 'one vendor side effect');
     $otherScope = [...$headers, 'X-Location-ID' => 'another-location'];
     $check($mock->handle('GET', '/orders/reconcile', $otherScope, '')['body']['status'] === 'not_found', 'reconciliation does not cross location');
-    $check($mock->handle('POST', '/order/'.$reference.'/shipping', $otherScope, '{}')['status'] === 404, 'amendment ownership');
+    $check($mock->handle('PUT', '/order/'.$reference.'/shipping', $otherScope, '{}')['status'] === 404, 'amendment ownership');
+    $check($mock->handle('POST', '/order/'.$reference.'/shipping', $headers, '{}')['status'] === 404, 'wrong amendment method denied');
     $amendment = [...$headers, 'Idempotency-Key' => 'synthetic-shipping'];
-    $check($mock->handle('POST', '/order/'.$reference.'/shipping', $amendment, '{"tracking":"SYNTHETIC"}')['status'] === 200, 'shipping amendment');
-    $check($mock->handle('POST', '/order/'.$reference.'/shipping', $amendment, '{"tracking":"SYNTHETIC"}')['status'] === 200, 'shipping duplicate');
+    $check($mock->handle('PUT', '/order/'.$reference.'/shipping', $amendment, '{"tracking":"SYNTHETIC"}')['status'] === 200, 'shipping amendment');
+    $check($mock->handle('PUT', '/order/'.$reference.'/shipping', $amendment, '{"tracking":"SYNTHETIC"}')['status'] === 200, 'shipping duplicate');
     $check($mock->handle('GET', '/metrics', $headers, '')['body']['amendments'] === 1, 'one amendment effect');
     $lost = [...$headers, 'Idempotency-Key' => 'synthetic-lost'];
     $check($mock->handle('POST', '/orders', $lost, '{"scenario":"accepted_then_lost"}')['status'] === 504, 'acceptance followed by response loss');

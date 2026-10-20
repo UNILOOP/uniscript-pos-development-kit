@@ -91,7 +91,7 @@ final class MockPos
             return $this->accepted($order['reference'], $path === '/order');
         }
 
-        if ($method === 'POST' && preg_match('~\A/order/([1-9][0-9]{0,17})/(status|shipping)\z~D', $path, $matches) === 1) {
+        if ($method === 'PUT' && preg_match('~\A/order/([1-9][0-9]{0,17})/(status|shipping)\z~D', $path, $matches) === 1) {
             $order = $this->database->prepare('SELECT reference FROM orders WHERE scope = ? AND reference = ?');
             $order->execute([$scope, $matches[1]]);
 
