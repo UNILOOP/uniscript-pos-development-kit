@@ -15,6 +15,22 @@ final class ConformanceProfile
             $fixtures=JsonDocument::decode(file_get_contents(dirname(__DIR__).'/tests/fixtures/'.($packageVersion!==''&&version_compare($packageVersion,'1.0.5','>=')?'lifefile-amendment-conformance.json':($packageVersion!==''&&version_compare($packageVersion,'1.0.4','>=')?'lifefile-canonical-conformance.json':'lifefile-conformance.json'))),true);
             return $fixtures[$operation]??throw new RuntimeException('trusted_scenario_not_available:'.$operation);
         }
+        if ($packageId === 'uniscript/demo' && $packageVersion !== '' && version_compare($packageVersion, '1.0.3', '>=')) {
+            if ($operation === 'orders.submit') {
+                return [['input' => ['order_id' => 'synthetic-order', 'config' => ['private' => 'DO-NOT-SEND'], 'order' => ['patient' => ['name' => 'SYNTHETIC-CANARY']]], 'kind' => 'remote_acceptance', 'expected_calls' => ['http.request'], 'expected_http_body' => ['order_id' => 'synthetic-order']], ['input' => [], 'kind' => 'validation_rejection', 'expected_calls' => []]];
+            }
+            if ($operation === 'inbound.decode') {
+                $scenarios = [['input' => ['authenticated_receipt' => true, 'receipt_handle' => 'synthetic-receipt', 'events' => [['orderId' => 'synthetic-order', 'eventId' => 'synthetic-event', 'status' => 'In Progress']]], 'kind' => 'success', 'expected_calls' => ['commands.propose'], 'expected_event' => ['external_order_reference' => 'synthetic-order', 'event_id' => 'synthetic-event', 'normalized_status' => 'in_progress']], ['input' => ['authenticated_receipt' => true, 'receipt_handle' => 'synthetic-receipt', 'events' => [['orderId' => 'synthetic-order', 'eventId' => 'synthetic-event', 'status' => 'received'], ['orderId' => null, 'eventId' => 'malformed-event', 'status' => 'delivered']]], 'kind' => 'validation_rejection', 'expected_calls' => []]];
+                $events = [];
+                $expected = [];
+                for ($index = 0; $index < 30; $index++) {
+                    $events[] = ['orderId' => 'synthetic-order-'.$index, 'eventId' => 'synthetic-event-'.$index, 'status' => 'received'];
+                    $expected[] = ['external_order_reference' => 'synthetic-order-'.$index, 'event_id' => 'synthetic-event-'.$index, 'normalized_status' => 'received'];
+                }
+                $scenarios[] = ['input' => ['authenticated_receipt' => true, 'receipt_handle' => 'synthetic-receipt', 'events' => $events], 'kind' => 'success', 'expected_calls' => array_fill(0, 30, 'commands.propose'), 'expected_events' => $expected];
+                return $scenarios;
+            }
+        }
         if ($packageId === 'uniscript/demo' && $operation === 'catalog.preview' && $packageVersion !== '' && version_compare($packageVersion, '1.0.2', '>=')) {
             return [['input' => ['records' => [['source_key' => 'synthetic-product-a', 'display_name' => 'Synthetic saline', 'vendor_product' => 7]]], 'kind' => 'success', 'expected_calls' => [], 'expected_proposals' => [['source_key' => 'synthetic-product-a', 'display_name' => 'Synthetic saline', 'canonical_item_handle' => null, 'mapping_values' => ['vendor_product' => 7], 'warnings' => []]]], ['input' => ['records' => [['source_key' => '', 'display_name' => 'Invalid']]], 'kind' => 'validation_rejection', 'expected_calls' => []]];
         }
@@ -38,7 +54,9 @@ final class ConformanceProfile
     public static function serviceResponse(string $packageId,array $scenario,array $request,SyntheticHost $host):array
     {
         $host->authorize($request);
+        if (isset($scenario['expected_event']) && $request['service'] === 'commands' && $request['action'] === 'propose' && ($request['arguments'] ?? null) !== ['command' => 'normalized_event', 'receipt_handle' => $scenario['input']['receipt_handle'], 'event' => $scenario['expected_event']]) { throw new RuntimeException('conformance_callback_projection'); }
         if ($request['service'] === 'http' && $request['action'] === 'request') {
+            if (isset($scenario['expected_http_body']) && ($request['arguments']['body'] ?? null) !== $scenario['expected_http_body']) { throw new RuntimeException('conformance_http_body'); }
             foreach ($scenario['expected_http_projection'] ?? [] as $path => $expectedValue) {
                 $actual = $request['arguments'];
                 foreach (explode('.', $path) as $part) {
@@ -59,10 +77,20 @@ final class ConformanceProfile
         return $host->transport($request);
     }
 
-    public static function verify(string $operation,array $scenario,Result $result,string $packageId,array $calls=[]):void
+    public static function verify(string $operation,array $scenario,Result $result,string $packageId,array $calls=[],array $requests=[]):void
     {
         if($result->kind!==$scenario['kind']){throw new RuntimeException('conformance_unexpected_result:'.$operation);}
         if (isset($scenario['expected_calls']) && $calls !== $scenario['expected_calls']) { throw new RuntimeException('conformance_service_call_sequence:'.$operation); }
+        if (isset($scenario['expected_events'])) {
+            $actualEvents = [];
+            foreach ($requests as $request) {
+                if ($request['service'] === 'commands' && $request['action'] === 'propose') {
+                    if (($request['arguments']['command'] ?? null) !== 'normalized_event' || ($request['arguments']['receipt_handle'] ?? null) !== $scenario['input']['receipt_handle']) { throw new RuntimeException('conformance_callback_scope'); }
+                    $actualEvents[] = $request['arguments']['event'] ?? null;
+                }
+            }
+            if ($actualEvents !== $scenario['expected_events']) { throw new RuntimeException('conformance_callback_batch_projection'); }
+        }
         if($result->kind==='validation_rejection'){return;}
         if (isset($scenario['expected_proposals']) && ($result->data['proposals'] ?? null) !== $scenario['expected_proposals']) { throw new RuntimeException('conformance_catalog_projection'); }
         if($operation==='identity.describe'&&($result->data['package_id']??null)!==$packageId){throw new RuntimeException('conformance_identity');}

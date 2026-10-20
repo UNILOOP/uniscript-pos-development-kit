@@ -127,11 +127,12 @@ final class Platform
             foreach(ConformanceProfile::scenarios($operation['key'],$manifest['package_id'],$manifest['manifest_version'],$manifest['version']) as $scenario){
                 $envelope=$this->syntheticEnvelope($record,$manifest,$operation['key']);
                 $envelope['input']=$scenario['input'];
+                if ($operation['key'] === 'inbound.decode' && is_array($scenario['input']['events'] ?? null)) { $envelope['request_budget'] = max(1, min(100, count($scenario['input']['events']))); }
                 $envelope['service_grant']=$host->grant($envelope,['storage.read','storage.write','resources.read','commands.propose','http.request']);
                 $command=array_merge(['docker','run','--rm','-i'],RuntimeProcess::flags(),['--env','PACKAGE_ROOT=/package','--env','EXECUTION_REVISION='.$record['execution_uuid'],'--env','SERVICE_TRANSPORT=stdio','--entrypoint','timeout',$image,'-s','KILL','30','php','-d','display_errors=0','-d','log_errors=0','/opt/kit/bin/invoke.php']);
-                $scenarioCalls=[];
-                $result=RuntimeProcess::invoke($command,$envelope,static function(array $request)use(&$scenarioCalls,$host,&$observed,$scenario,$manifest,$inspection):array{if(($request['service']??null)==='storage'&&($request['action']??null)==='write'&&($manifest['manifest_version']??null)===2){$resource=$request['arguments']['key']??'';$path=$manifest['resource_schemas'][$resource]??throw new RuntimeException('resource_not_declared');$definition=JsonDocument::decode(file_get_contents($inspection.'/'.$path));ResourceSchema::validateValues($definition,$request['arguments']['value']??[]);}$response=ConformanceProfile::serviceResponse($manifest['package_id'],$scenario,$request,$host);$observed[]=$request['service'].'.'.$request['action'];$scenarioCalls[]=$request['service'].'.'.$request['action'];return $response;});
-                ConformanceProfile::verify($operation['key'],$scenario,$result,$manifest['package_id'],$scenarioCalls);
+                $scenarioCalls=[];$scenarioRequests=[];
+                $result=RuntimeProcess::invoke($command,$envelope,static function(array $request)use(&$scenarioCalls,&$scenarioRequests,$host,&$observed,$scenario,$manifest,$inspection):array{if(($request['service']??null)==='storage'&&($request['action']??null)==='write'&&($manifest['manifest_version']??null)===2){$resource=$request['arguments']['key']??'';$path=$manifest['resource_schemas'][$resource]??throw new RuntimeException('resource_not_declared');$definition=JsonDocument::decode(file_get_contents($inspection.'/'.$path));ResourceSchema::validateValues($definition,$request['arguments']['value']??[]);}$response=ConformanceProfile::serviceResponse($manifest['package_id'],$scenario,$request,$host);$observed[]=$request['service'].'.'.$request['action'];$scenarioCalls[]=$request['service'].'.'.$request['action'];$scenarioRequests[]=$request;return $response;});
+                ConformanceProfile::verify($operation['key'],$scenario,$result,$manifest['package_id'],$scenarioCalls,$scenarioRequests);
             }
             $tested[]=$operation['key'];
         }

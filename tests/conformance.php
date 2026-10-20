@@ -39,7 +39,7 @@ check($unknown->kind==='unknown_remote_outcome' && $unknown->recovery['resubmit_
 check(invoke($host,'demo','orders.reconcile','lost-key')->kind==='remote_acceptance','reconciliation');
 check($host->providerSubmissions===2,'reconcile_does_not_resubmit');
 check(invoke($host,'demo','inbound.decode','callback',[])->kind==='validation_rejection','unauthenticated_callback');
-check(invoke($host,'demo','inbound.decode','callback',['authenticated_receipt'=>true,'receipt_handle'=>'receipt-a','event_id'=>'event-a'])->data['applied']===false,'callback_is_proposal');
+check(invoke($host,'demo','inbound.decode','callback',['authenticated_receipt'=>true,'receipt_handle'=>'receipt-a','events'=>[['orderId'=>'order-a','eventId'=>'event-a','status'=>'received']]])->data['applied']===false,'callback_is_proposal');
 check(invoke($host,'demo','catalog.preview',input:['records'=>[['source_key'=>'synthetic-product-a','display_name'=>'Synthetic saline']]])->data['applied']===false,'catalog_is_proposal');
 check(invoke($host,'demo','reference.refresh')->data['revision']===1,'storage_initial_revision');
 denied(fn()=>invoke($host,'demo','reference.refresh'),'stale_revision');
