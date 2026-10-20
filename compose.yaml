@@ -10,7 +10,7 @@ services:
     pids_limit: 32
     mem_limit: 256m
     cpus: 0.5
-    tmpfs: [/tmp:rw,noexec,nosuid,size=16m,uid=10001,gid=10001]
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=16m,uid=10001,gid=10001"]
     environment:
       EXECUTION_REVISION: ${EXECUTION_REVISION:?required}
       INVOCATION_TOKEN: ${INVOCATION_TOKEN:?required}

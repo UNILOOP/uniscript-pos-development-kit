@@ -1,0 +1,92 @@
+name: uniscript-kit-local
+x-trusted: &trusted
+  image: uniscript-kit-local-dev:${SDK_DEV_TAG:-latest}
+  working_dir: /opt/kit
+x-unprivileged: &unprivileged
+  <<: *trusted
+  user: "10001:10001"
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  pids_limit: 32
+  mem_limit: 256m
+  cpus: 1
+  tmpfs: ["/tmp:rw,noexec,nosuid,size=32m,uid=10001,gid=10001"]
+services:
+  init:
+    <<: *trusted
+    build:
+      context: .
+      dockerfile: docker/Dev.Dockerfile
+    command: [php, bin/dev-init.php]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - cp-config:/configs/cp
+      - broker-config:/configs/broker
+      - mock-config:/configs/mock
+      - callback-config:/configs/callback
+      - operator-config:/configs/operator
+      - broker-data:/data/broker
+      - mock-data:/data/mock
+      - callback-data:/data/callback
+      - artifacts:/artifacts
+  control-plane:
+    <<: *trusted
+    command: [php, bin/dev-service.php, control-plane]
+    depends_on:
+      init: {condition: service_completed_successfully}
+    volumes: [/var/run/docker.sock:/var/run/docker.sock, cp-config:/config:ro, platform-data:/state]
+    networks: [synthetic]
+  worker:
+    <<: *trusted
+    command: [php, bin/dev-service.php, worker]
+    depends_on:
+      init: {condition: service_completed_successfully}
+    volumes: [/var/run/docker.sock:/var/run/docker.sock, cp-config:/config:ro, platform-data:/state]
+    networks: [synthetic]
+  broker:
+    <<: *unprivileged
+    command: [php, bin/dev-service.php, broker]
+    depends_on:
+      init: {condition: service_completed_successfully}
+    volumes: [broker-config:/config:ro, broker-data:/data]
+    networks: [synthetic]
+  mock-pos:
+    <<: *unprivileged
+    command: [php, bin/dev-service.php, mock]
+    depends_on:
+      init: {condition: service_completed_successfully}
+    volumes: [mock-config:/config:ro, mock-data:/data]
+    networks: [synthetic]
+  callbacks:
+    <<: *unprivileged
+    command: [php, bin/dev-service.php, callback]
+    depends_on:
+      init: {condition: service_completed_successfully}
+    volumes: [callback-config:/config:ro, callback-data:/data]
+    networks: [synthetic]
+  operator:
+    <<: *unprivileged
+    command: [php, bin/dev-service.php, operator]
+    depends_on:
+      init: {condition: service_completed_successfully}
+      control-plane: {condition: service_started}
+      broker: {condition: service_started}
+      mock-pos: {condition: service_started}
+    ports: ["127.0.0.1:${SDK_OPERATOR_PORT:-19090}:8080"]
+    volumes: [operator-config:/config:ro, artifacts:/artifacts]
+    networks: [synthetic, operator-access]
+networks:
+  synthetic: {internal: true}
+  operator-access: {}
+volumes:
+  cp-config:
+  broker-config:
+  mock-config:
+  callback-config:
+  operator-config:
+  platform-data:
+  broker-data:
+  mock-data:
+  callback-data:
+  artifacts:

@@ -13,7 +13,7 @@ function check(bool $condition,string $reason):void{global $assertions;$assertio
 function successful(array $record,string $status):void{check($record['status']===$status,json_encode($record,JSON_THROW_ON_ERROR));}
 $archive=$state.'/demo.zip';
 Process::run([PHP_BINARY,$root.'/bin/package.php',$root.'/examples/demo',$archive]);
-$input=['execution_uuid'=>'docker-test-'.bin2hex(random_bytes(8)),'source_sha256'=>hash_file('sha256',$archive),'package_id'=>'uniscript/demo','package_version'=>'1.0.0'];
+$input=['execution_uuid'=>'docker-test-'.bin2hex(random_bytes(8)),'source_sha256'=>hash_file('sha256',$archive),'package_id'=>'uniscript/demo','package_version'=>json_decode(file_get_contents($root.'/examples/demo/integration.json'),true)['version']];
 $build=$platform->enqueue('builds',$input,$archive);check($platform->enqueue('builds',$input,$archive)['id']===$build['id'],'idempotent_build');
 $platform->work();$build=$platform->read('builds',$build['id']);successful($build,'succeeded');
 $cert=$platform->enqueue('certifications',['execution_uuid'=>$input['execution_uuid'],'build_id'=>$build['id'],'source_sha256'=>$input['source_sha256'],'digests'=>$build['digests']]);
@@ -35,11 +35,11 @@ foreach(['validation_rejection','temporary_failure'] as $kind){
     $fixture=$state.'/stub-'.$kind;
     mkdir($fixture.'/src',0700,true);mkdir($fixture.'/schemas',0700);
     foreach(['integration.json','composer.json','composer.lock'] as $file){copy($root.'/examples/demo/'.$file,$fixture.'/'.$file);}
-    foreach(['input.json','output.json'] as $file){copy($root.'/examples/demo/schemas/'.$file,$fixture.'/schemas/'.$file);}
+    foreach(glob($root.'/examples/demo/schemas/*.json') as $schema){copy($schema,$fixture.'/schemas/'.basename($schema));}
     $source="<?php\n\$handlers=[]; foreach(json_decode(file_get_contents(__DIR__.'/../integration.json'),true)['operations'] as \$operation){\$handlers[\$operation['key']]=static fn(\$inv,\$svc)=>new \\UniScript\\Integration\\Result('".$kind."','stub.unavailable');} return \$handlers;";
     file_put_contents($fixture.'/src/runtime.php',$source);
     $stubZip=$state.'/stub-'.$kind.'.zip';Process::run([PHP_BINARY,$root.'/bin/package.php',$fixture,$stubZip]);
-    $stub=$platform->enqueue('builds',['execution_uuid'=>'stub-'.bin2hex(random_bytes(8)),'source_sha256'=>hash_file('sha256',$stubZip),'package_id'=>'uniscript/demo','package_version'=>'1.0.0'],$stubZip);
+    $stub=$platform->enqueue('builds',['execution_uuid'=>'stub-'.bin2hex(random_bytes(8)),'source_sha256'=>hash_file('sha256',$stubZip),'package_id'=>'uniscript/demo','package_version'=>json_decode(file_get_contents($root.'/examples/demo/integration.json'),true)['version']],$stubZip);
     $platform->work();$stub=$platform->read('builds',$stub['id']);successful($stub,'succeeded');
     $stubCert=$platform->enqueue('certifications',['execution_uuid'=>$stub['execution_uuid'],'build_id'=>$stub['id'],'source_sha256'=>$stub['source_sha256'],'digests'=>$stub['digests']]);
     $platform->work();$stubCert=$platform->read('certifications',$stubCert['id']);successful($stubCert,'failed');check(str_contains($stubCert['_diagnostic'],'conformance_unexpected_result'),'stub_cannot_certify');

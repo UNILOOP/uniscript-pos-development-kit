@@ -39,7 +39,7 @@ final class Manifest
             }
             if(property_exists($object,'resource_schemas')){
                 if(!$object->resource_schemas instanceof \stdClass||count(get_object_vars($object->resource_schemas))>50){throw new InvalidArgumentException('resource_schemas_object');}
-                foreach(get_object_vars($object->resource_schemas) as $name=>$path){if(!preg_match('/\A[a-z][a-z0-9_]{0,63}\z/D',$name)){throw new InvalidArgumentException('resource_schema_name');}self::schemaFile($root,$path,false);}
+                foreach(get_object_vars($object->resource_schemas) as $name=>$path){if(!preg_match('/\A[a-z][a-z0-9_]{0,63}\z/D',$name)){throw new InvalidArgumentException('resource_schema_name');}self::schemaFile($root,$path,false,true);}
             }
         }
         foreach (['composer.json', 'composer.lock'] as $file) {
@@ -48,12 +48,13 @@ final class Manifest
         return $manifest;
     }
 
-    private static function schemaFile(string $root,mixed $path,bool $credentials):void
+    private static function schemaFile(string $root,mixed $path,bool $credentials,bool $resource=false):void
     {
         if(!is_string($path)||!str_ends_with($path,'.json')){throw new InvalidArgumentException('configuration_schema_path');}
         self::path($path);$file=realpath($root.'/'.$path);$base=realpath($root);
         if($file===false||$base===false||!str_starts_with($file,$base.DIRECTORY_SEPARATOR)||is_link($root.'/'.$path)||!is_file($file)||filesize($file)>262144){throw new InvalidArgumentException('configuration_schema_file');}
-        ConfigurationSchema::assertDefinition(JsonDocument::decode(file_get_contents($file)),$credentials);
+        $definition=JsonDocument::decode(file_get_contents($file));
+        if($resource){ResourceSchema::assertDefinition($definition);}else{ConfigurationSchema::assertDefinition($definition,$credentials);}
     }
 
     public static function path(string $path): void

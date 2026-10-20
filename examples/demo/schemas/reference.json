@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "synthetic": {
+      "type": "boolean"
+    },
+    "values": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "string",
+        "maxLength": 100
+      }
+    }
+  },
+  "required": [
+    "synthetic",
+    "values"
+  ],
+  "additionalProperties": false
+}

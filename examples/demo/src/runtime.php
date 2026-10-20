@@ -6,10 +6,20 @@ use UniScript\Integration\Invocation;
 use UniScript\Integration\Result;
 use UniScript\Integration\Services;
 
+$validateConfiguration=static function(Invocation $invocation, Services $services): Result {
+        try {
+            $schema=UniScript\Integration\JsonDocument::decode(file_get_contents(__DIR__.'/../schemas/configuration.json'));
+            $configuration=$invocation->input()['config']??null;if(!is_array($configuration)){throw new InvalidArgumentException('configuration_object_required');}
+            UniScript\Integration\ConfigurationSchema::validateValues($schema,$configuration);
+            foreach(['vendor_id','location_id','api_network_id'] as $field){if(!preg_match('/\A[1-9][0-9]{0,17}\z/D',$configuration[$field])){throw new InvalidArgumentException('invalid_provider_identity');}}
+            return new Result('success','configuration.valid');
+        } catch(InvalidArgumentException) { return new Result('validation_rejection','configuration.invalid'); }
+    };
+
 return [
     'identity.describe' => static fn(Invocation $invocation, Services $services): Result => new Result('success', 'identity.available', ['package_id' => $invocation->envelope['package_id']]),
-    'health.probe' => static fn(Invocation $invocation, Services $services): Result => new Result('success', 'health.ready'),
-    'configuration.validate' => static fn(Invocation $invocation, Services $services): Result => in_array($invocation->input()['mode'] ?? 'mock', ['mock'], true) ? new Result('success', 'configuration.valid') : new Result('validation_rejection', 'configuration.invalid', [], [['path' => 'mode', 'reason_code' => 'unsupported']]),
+    'health.probe' => static function(Invocation $invocation, Services $services)use($validateConfiguration):Result{$validation=$validateConfiguration($invocation,$services);return $validation->kind==='success'?new Result('success','health.ready',['vendor_connectivity_verified'=>false]):$validation;},
+    'configuration.validate' => $validateConfiguration,
     'orders.validate' => static fn(Invocation $invocation, Services $services): Result => isset($invocation->input()['order_id']) ? new Result('success', 'order.valid') : new Result('validation_rejection', 'order.invalid', [], [['path' => 'order_id', 'reason_code' => 'required']]),
     'orders.submit' => static function (Invocation $invocation, Services $services): Result {
         if (!isset($invocation->input()['order_id'])) { return new Result('validation_rejection', 'order.invalid', [], [['path' => 'order_id', 'reason_code' => 'required']]); }

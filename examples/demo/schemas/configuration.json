@@ -1,0 +1,36 @@
+{
+  "type": "object",
+  "properties": {
+    "vendor_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 18,
+      "title": "Vendor ID"
+    },
+    "location_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 18,
+      "title": "Provider location ID"
+    },
+    "api_network_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 18,
+      "title": "API network ID"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "mock"
+      ],
+      "title": "Synthetic mode"
+    }
+  },
+  "required": [
+    "vendor_id",
+    "location_id",
+    "api_network_id"
+  ],
+  "additionalProperties": false
+}

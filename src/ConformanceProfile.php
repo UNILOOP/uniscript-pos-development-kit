@@ -9,12 +9,13 @@ use RuntimeException;
 /** Trusted synthetic scenarios, selected by platform profile rather than package assertions. */
 final class ConformanceProfile
 {
-    public static function scenarios(string $operation,string $packageId=''): array
+    public static function scenarios(string $operation,string $packageId='',int $manifestVersion=1): array
     {
         if($packageId==='uniscript/lifefile'){
             $fixtures=JsonDocument::decode(file_get_contents(dirname(__DIR__).'/tests/fixtures/lifefile-conformance.json'),true);
             return $fixtures[$operation]??throw new RuntimeException('trusted_scenario_not_available:'.$operation);
         }
+        if($packageId==='uniscript/demo'&&$manifestVersion===2&&in_array($operation,['configuration.validate','health.probe'],true)){return [['input'=>['config'=>['vendor_id'=>'10001','location_id'=>'10002','api_network_id'=>'10003','mode'=>'mock']],'kind'=>'success'],['input'=>['config'=>['vendor_id'=>false,'location_id'=>'10002','api_network_id'=>'10003']],'kind'=>'validation_rejection']];}
         $order=['order_id'=>'synthetic-order'];
         $receipt=['authenticated_receipt'=>true,'receipt_handle'=>'synthetic-receipt','event_id'=>'synthetic-event'];
         return match($operation){

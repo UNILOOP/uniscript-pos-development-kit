@@ -2,6 +2,40 @@
 
 Standalone PHP 8.4 SDK, synthetic examples, and trusted **local** build/certification/runtime tools. There are no Laravel dependencies or UniScript model imports. Package code executes in separate Docker containers. A PHP child process by itself is not isolation.
 
+## Container-only local quickstart
+
+A clean SDK checkout needs Docker Engine with Compose v2 on Linux, or Docker Desktop using Linux containers on macOS/Windows. The reviewed tool image contains PHP 8.4, the standalone SDK and examples. The workflow uses no private UniScript source.
+
+These commands work in Linux/macOS shells and Windows PowerShell:
+
+```sh
+docker compose -f compose.dev.yaml up --build -d
+docker compose -f compose.dev.yaml exec -T operator php bin/dev-workflow.php --example demo
+```
+
+Open the **Local operator** at `http://127.0.0.1:19090`. Its starter/demo buttons perform real ZIP inspection, Docker image build, independent conformance, deployment/readiness and runtime invocation. Demo 1.0.1 uses manifest v2: required positive numeric-string provider identity fields, optional mock mode, username/password credential schemas and declared typed reference storage. The trusted local fixture supplies synthetic IDs and generates private mock credentials; package code receives neither reusable secrets nor control-plane tokens.
+
+The demo makes real HTTP calls through scoped grants to the synthetic vendor, verifies exactly two new orders despite duplicate/unknown-outcome requests, reconciles acceptance, and writes a declared typed reference resource. A separate configured synthetic callback fixture verifies authentication, encrypted receipt storage and scoped replay preparation. That callback fixture does not claim an automatic callback from the just-submitted order, and replay remains a proposal.
+
+The Docker socket is mounted only into the trusted initializer/control-plane/worker. Broker, vendor, callback receiver and operator use separate private config/data volumes, run nonroot/read-only and have no Docker socket or host source mounts. Package images remain separate networkless, read-only, nonroot containers with no mounts or platform credentials. Only the operator has a loopback published port; the other tool APIs use the internal synthetic network. The operator's extra access network enables Docker Desktop loopback publishing and must not be mistaken for package network access.
+
+The build context explicitly excludes `.git`, `.env`, `var` and application source. Private generated settings live only in named volumes. Docker builds pull public PHP/Docker CLI base images and compile the ZIP extension, so a fresh tool build needs internet access. Package containers still have no network. On this Mac's app-shell environment, Docker Desktop's credential helper requires `export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"`; ordinary terminals may already have it configured.
+
+Choose a different UI port with `SDK_OPERATOR_PORT=19190 docker compose -f compose.dev.yaml up --build -d` on Linux/macOS, or `$env:SDK_OPERATOR_PORT="19190"` followed by the same Compose command in PowerShell. Use Docker Desktop's Linux engine; Windows container mode is unsupported. The automated clean workflow currently runs against a Linux Docker engine on macOS; separate Windows/Linux-host CI remains a portability gate.
+
+After editing package source, rebuild the tool image and recreate services with `docker compose -f compose.dev.yaml up --build -d`. Copy generated ZIPs with `docker compose -f compose.dev.yaml cp operator:/artifacts/. ./dist`. The native SDK/packager below remains available when PHP is installed locally.
+
+Stop local tools while preserving their private state:
+
+```sh
+docker compose -f compose.dev.yaml exec -T worker php bin/dev-cleanup.php
+docker compose -f compose.dev.yaml down
+```
+
+Add `--volumes` to `down` for a deliberate synthetic reset. Run cleanup before deleting volumes so package deployment containers are removed as well. This affects only that Compose project's named state; it does not manage UniScript's environments. The local control plane, generated credentials and JSON/SQLite ledgers are developer tools, not hosted or production infrastructure.
+
+Maintainers can run `php tests/clean-workflow.php` to build a fresh tagged image/project, exercise the real flow and UI protections, inspect isolation, and clean its own containers/volumes. This optional outer QA harness requires PHP on the host; the normal developer workflow above does not. Component checks include `php tests/local-synthetic-broker.php`, `php tests/resources.php`, and `php tests/resource-certification-docker.php`.
+
 ## Run the examples
 
 Requires PHP 8.4+ with ZIP for packaging, Docker Desktop with its Linux engine, and the PHP base image pulled by the trusted operator:
@@ -84,7 +118,7 @@ The iframe helper requires a separate origin, `sandbox="allow-scripts allow-same
 
 Version 1 remains unchanged. Version 2 additionally requires `configuration_schema` and `credential_schema` packaged JSON file paths and permits an optional `resource_schemas` object mapping normalized resource names to packaged schema paths. Use names such as `schemas/credential.json`; the source policy deliberately rejects `credentials.*` files as potentially embedded credentials.
 
-These three schema roles use the host-compatible scalar profile: root `type: "object"`, actual JSON-object `properties`, explicit unique `required` array and `additionalProperties: false`. Configuration/resource fields support string, boolean, integer and finite number; credential fields support strings only. Fields support bounded strict typed enums, string lengths (0–4096), finite ordered numeric bounds, and plain-text titles/descriptions. Nested values, nulls, defaults, references, regexes and composition keywords reject this profile. `ConfigurationSchema::validateValues` mirrors host value validation. Secrets remain vault-owned; the schema does not carry credential values.
+Configuration and credential schemas use the host-compatible scalar profile: root `type: "object"`, actual JSON-object `properties`, explicit unique `required` array and `additionalProperties: false`. Configuration fields support string, boolean, integer and finite number; credential fields support strings only. Fields support bounded strict typed enums, string lengths (0–4096), finite ordered numeric bounds, and plain-text titles/descriptions. Nested values, nulls, defaults, references, regexes and composition keywords reject the configuration/credential profile. Resource schemas use a separate closed-object profile with nested objects, bounded arrays (`items` plus `maxItems` 1–1000), and the same scalar rules. Resource definitions are limited to depth six, 200 total nodes and 50 properties per object; they remain closed to arbitrary references/composition. The certifier exercises version-2 storage writes against these declared resource names and value schemas. `ConfigurationSchema::validateValues` mirrors host value validation. Secrets remain vault-owned; the schema does not carry credential values.
 
 Run `php tests/manifest-v2.php` for profile checks and `php tests/manifest-v2-docker.php` for actual version-2 build/certification/readiness. The existing LifeFile synthetic recipe remains manifest version 1. Its package ZIP can be checked with `php tests/lifefile-docker.php /path/to/lifefile.zip`.
 

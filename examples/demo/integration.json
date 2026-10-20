@@ -1,11 +1,11 @@
 {
-  "manifest_version": 1,
+  "manifest_version": 2,
   "package_id": "uniscript/demo",
   "publisher": "uniscript",
   "integration_key": "example-demo",
   "display_name": "Synthetic Demo",
   "vendor_family": "synthetic",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "sdk_version": "^1.0",
   "protocol_version": "1",
   "runtime": {
@@ -86,5 +86,10 @@
   "support": {
     "email": "integrations@example.invalid",
     "documentation": "https://example.invalid/integration-kit"
+  },
+  "configuration_schema": "schemas/configuration.json",
+  "credential_schema": "schemas/credential.json",
+  "resource_schemas": {
+    "reference": "schemas/reference.json"
   }
 }

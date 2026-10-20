@@ -26,7 +26,7 @@ function invoke(SyntheticHost $host, string $package, string $operation, string 
 $host=new SyntheticHost();
 foreach (['starter','demo'] as $package) {
     check(invoke($host,$package,'identity.describe')->data['package_id']==='uniscript/'.$package,'identity');
-    check(invoke($host,$package,'health.probe')->kind==='success','health');
+    check(invoke($host,$package,'health.probe',input:$package==='demo'?['config'=>['vendor_id'=>'10001','location_id'=>'10002','api_network_id'=>'10003']]:[])->kind==='success','health');
     check(invoke($host,$package,'orders.validate')->kind==='validation_rejection','validation');
     check(invoke($host,$package,'undefined.operation')->kind==='unsupported_operation','unsupported');
 }

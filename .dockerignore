@@ -1,0 +1,10 @@
+*
+!bootstrap.php
+!composer.json
+!README.md
+!src/**
+!bin/**
+!docker/**
+!examples/**
+!tests/**
+!ui/**
