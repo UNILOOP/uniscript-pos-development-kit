@@ -23,6 +23,15 @@ $body = json_encode(['patient' => 'SYNTHETIC_DO_NOT_PERSIST', 'quantity' => '1.0
 try {
     $check($mock->handle('GET', '/health', [], '')['status'] === 200, 'mock health');
     $check($mock->handle('POST', '/order', [], $body)['status'] === 401, 'authorization required');
+    $probeHeaders = [...$headers, 'X-Vendor-ID' => 'synthetic-vendor', 'X-API-Network-ID' => 'synthetic-network', 'X-UniScript-Challenge' => str_repeat('a', 64)];
+    $check($mock->handle('GET', '/connection-check', [], '')['status'] === 401, 'probe requires authentication');
+    $check($mock->handle('GET', '/connection-check', $headers, '')['status'] === 422, 'probe requires account and fresh challenge');
+    $probe = $mock->handle('GET', '/connection-check', $probeHeaders, '');
+    $check($probe['status'] === 200 && $probe['body']['authenticated'] === true && $probe['body']['challenge'] === str_repeat('a', 64), 'authenticated challenge echoed');
+    $check($probe['body']['account'] === ['vendor' => 'synthetic-vendor', 'location' => 'synthetic-location', 'api_network' => 'synthetic-network'], 'probe verifies exact account routing');
+    $check($mock->handle('GET', '/connection-check', [...$probeHeaders, 'X-UniScript-Challenge' => 'invalid'], '')['status'] === 422, 'malformed challenge rejected');
+    $check($mock->handle('GET', '/connection-check', $probeHeaders, '{}')['status'] === 422, 'probe rejects request payload');
+    $check($mock->handle('GET', '/metrics', $headers, '')['body']['orders'] === 0, 'probe has no order side effects');
     $created = $mock->handle('POST', '/order', $headers, $body);
     $reference = $created['body']['data']['orderId'];
     $check($created['status'] === 200 && preg_match('/\A[1-9][0-9]{11}\z/D', $reference) === 1, 'vendor reference');

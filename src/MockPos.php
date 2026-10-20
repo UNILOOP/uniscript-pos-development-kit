@@ -34,6 +34,23 @@ final class MockPos
             return $this->response(401, ['error' => 'unauthorized']);
         }
 
+        if ($method === 'GET' && $path === '/connection-check') {
+            $challenge = $headers['x-uniscript-challenge'] ?? '';
+            $account = [];
+            foreach (['vendor' => 'x-vendor-id', 'location' => 'x-location-id', 'api_network' => 'x-api-network-id'] as $field => $header) {
+                $value = $headers[$header] ?? '';
+                if (preg_match('/\A[\x21-\x7e]{1,200}\z/D', $value) !== 1) {
+                    return $this->response(422, ['error' => 'invalid_probe_account']);
+                }
+                $account[$field] = $value;
+            }
+            if (preg_match('/\A[a-f0-9]{64}\z/D', $challenge) !== 1 || $body !== '') {
+                return $this->response(422, ['error' => 'invalid_probe_challenge']);
+            }
+
+            return $this->response(200, ['protocol' => 'uniscript.synthetic-probe.v1', 'challenge' => $challenge, 'authenticated' => true, 'synthetic' => true, 'account' => $account]);
+        }
+
         $scope = hash('sha256', $this->username.':'.($headers['x-location-id'] ?? 'synthetic-location'));
 
         if ($method === 'GET' && $path === '/metrics') {
