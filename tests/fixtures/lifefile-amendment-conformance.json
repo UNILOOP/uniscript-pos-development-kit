@@ -1,0 +1,1841 @@
+{
+  "identity.describe": [
+    {
+      "input": {},
+      "kind": "success"
+    }
+  ],
+  "health.probe": [
+    {
+      "input": {
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        }
+      },
+      "kind": "success"
+    }
+  ],
+  "configuration.validate": [
+    {
+      "input": {
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        }
+      },
+      "kind": "success"
+    },
+    {
+      "input": {
+        "config": {
+          "practice_id": false
+        }
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "orders.validate": [
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": "305157958",
+                "external_pms_product_id": "870001234",
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 7
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5
+          }
+        ]
+      },
+      "kind": "success"
+    },
+    {
+      "input": {},
+      "kind": "validation_rejection",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "catalog_item",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "catalog_item",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "success",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "compound",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "compound",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "success",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "custom",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "custom",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "success",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "supply",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "supply",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "success",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-02-30",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "catalog_item",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "catalog_item",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "catalog_item",
+                "reference_handle": "wrong",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "catalog_item",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "catalog_item",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "catalog_item",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "orders.submit": [
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": "305157958",
+                "external_pms_product_id": "870001234",
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 7
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5
+          }
+        ]
+      },
+      "kind": "remote_acceptance"
+    },
+    {
+      "input": {},
+      "kind": "validation_rejection",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "catalog_item",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "catalog_item",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile.orders",
+        "body.order.rxs.0.lfProductID": 305157958,
+        "body.order.rxs.0.externalPmsProductID": 870001234,
+        "body.order.rxs.0.quantity": 30,
+        "body.order.rxs.0.daysSupply": 30,
+        "body.order.rxs.0.quantityUnits": "tabs",
+        "body.order.rxs.0.dateWritten": "2026-06-29",
+        "body.order.shipping.service": 1,
+        "body.order.billing.payorType": "pat"
+      }
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "compound",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "compound",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile.orders",
+        "body.order.rxs.0.lfProductID": 305157958,
+        "body.order.rxs.0.externalPmsProductID": 870001234,
+        "body.order.rxs.0.quantity": 30,
+        "body.order.rxs.0.daysSupply": 30,
+        "body.order.rxs.0.quantityUnits": "tabs",
+        "body.order.rxs.0.dateWritten": "2026-06-29",
+        "body.order.shipping.service": 1,
+        "body.order.billing.payorType": "pat"
+      }
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "custom",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "custom",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile.orders",
+        "body.order.rxs.0.lfProductID": 305157958,
+        "body.order.rxs.0.externalPmsProductID": 870001234,
+        "body.order.rxs.0.quantity": 30,
+        "body.order.rxs.0.daysSupply": 30,
+        "body.order.rxs.0.quantityUnits": "tabs",
+        "body.order.rxs.0.dateWritten": "2026-06-29",
+        "body.order.shipping.service": 1,
+        "body.order.billing.payorType": "pat"
+      }
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "supply",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "supply",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile.orders",
+        "body.order.rxs.0.lfProductID": 305157958,
+        "body.order.rxs.0.externalPmsProductID": 870001234,
+        "body.order.rxs.0.quantity": 30,
+        "body.order.rxs.0.daysSupply": 30,
+        "body.order.rxs.0.quantityUnits": "tabs",
+        "body.order.rxs.0.dateWritten": "2026-06-29",
+        "body.order.shipping.service": 1,
+        "body.order.billing.payorType": "pat"
+      }
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-02-30",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "catalog_item",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "catalog_item",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "catalog_item",
+                "reference_handle": "wrong",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "catalog_item",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "catalog_item",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "catalog_item",
+                "handle": "synthetic-catalog"
+              }
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "order_id": "synthetic-order",
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "order": {
+          "order_id": "synthetic-order",
+          "submitted_at": "2026-06-30T16:00:00Z",
+          "patient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "date_of_birth": "1990-01-02",
+            "gender": "female",
+            "phone": "+1 (212) 555-0100 ext 22",
+            "address": {
+              "line1": "100 Synthetic Way",
+              "city": "Albany",
+              "state": "NY",
+              "postal_code": "12201",
+              "country": "us"
+            }
+          },
+          "prescriber": {
+            "name": "Taylor Example, MD",
+            "npi": "1234567890"
+          },
+          "shipping": {
+            "service": "standard"
+          },
+          "medications": [
+            {
+              "quantity": "30.0000",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157958,
+                "external_pms_product_id": 870001234,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "tabs",
+                "version": 2,
+                "reference_type": "catalog_item",
+                "reference_handle": "synthetic-catalog",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "catalog_item",
+                "handle": "synthetic-catalog"
+              }
+            },
+            {
+              "quantity": "2",
+              "quantity_unit": "tablet",
+              "directions": "Take one tablet daily.",
+              "days_supply": "30.0000",
+              "refills": 0,
+              "date_written": "2026-06-29",
+              "mapping": {
+                "approval_status": "approved",
+                "lf_product_id": 305157959,
+                "external_pms_product_id": 870001235,
+                "default_drug_name": "Synthetic medication",
+                "default_drug_strength": "10 mg",
+                "default_drug_form": "tablet",
+                "lifefile_quantity_unit": "each",
+                "version": 2,
+                "reference_type": "supply",
+                "reference_handle": "synthetic-component",
+                "mapping_handle": "synthetic-approved-mapping"
+              },
+              "package_expanded": true,
+              "identity": {
+                "kind": "supply",
+                "handle": "synthetic-component"
+              },
+              "package_component": true
+            }
+          ]
+        },
+        "shipping_services": [
+          {
+            "canonical_code": "standard",
+            "lifefile_code": "1",
+            "active": true,
+            "version": 5,
+            "vendor_code": "1"
+          }
+        ],
+        "canonical_order_version": "1.1"
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile.orders",
+        "body.order.rxs.0.lfProductID": 305157958,
+        "body.order.rxs.0.externalPmsProductID": 870001234,
+        "body.order.rxs.0.quantity": 30,
+        "body.order.rxs.0.daysSupply": 30,
+        "body.order.rxs.0.quantityUnits": "tabs",
+        "body.order.rxs.0.dateWritten": "2026-06-29",
+        "body.order.shipping.service": 1,
+        "body.order.billing.payorType": "pat",
+        "body.order.rxs.1.lfProductID": 305157959,
+        "body.order.rxs.1.externalPmsProductID": 870001235,
+        "body.order.rxs.1.quantity": 2,
+        "body.order.rxs.1.quantityUnits": "each"
+      }
+    }
+  ],
+  "orders.reconcile": [
+    {
+      "input": {
+        "external_reference_handle": "synthetic-reference"
+      },
+      "kind": "remote_acceptance",
+      "services": {
+        "resources.read": {
+          "status": "accepted",
+          "external_reference_handle": "synthetic-reference"
+        }
+      }
+    }
+  ],
+  "inbound.decode": [
+    {
+      "input": {
+        "authenticated_receipt": true,
+        "receipt_handle": "synthetic-receipt",
+        "events": [
+          {
+            "eventId": "synthetic-event",
+            "orderId": "synthetic-order",
+            "rxStatus": "Filled",
+            "trackingNumber": "SYNTHETIC-TRACKING"
+          }
+        ]
+      },
+      "kind": "success"
+    },
+    {
+      "input": {
+        "authenticated_receipt": false
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "catalog.preview": [
+    {
+      "input": {
+        "records": [
+          {
+            "lf_product_id": "305157958",
+            "canonical_item_handle": "synthetic-canonical"
+          }
+        ]
+      },
+      "kind": "success"
+    }
+  ],
+  "reference.refresh": [
+    {
+      "input": {
+        "expected_revision": 0,
+        "references": [
+          {
+            "kind": "shipping_service",
+            "code": "1",
+            "label": "Standard"
+          }
+        ]
+      },
+      "kind": "success"
+    }
+  ],
+  "orders.status.update": [
+    {
+      "input": {
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "external_reference_handle": "synthetic-reference",
+        "status": "in_process",
+        "allowed_status_codes": [
+          "in_process"
+        ]
+      },
+      "kind": "remote_acceptance"
+    },
+    {
+      "input": {},
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "orders.shipping.update": [
+    {
+      "input": {
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "external_reference_handle": "synthetic-reference",
+        "shipping": {
+          "service": 1
+        },
+        "allowed_shipping_codes": [
+          1
+        ]
+      },
+      "kind": "remote_acceptance"
+    },
+    {
+      "input": {},
+      "kind": "validation_rejection",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "external_reference_handle": "synthetic-reference",
+        "allowed_shipping_codes": [
+          1
+        ],
+        "shipping": {
+          "service": 1,
+          "recipient_phone": "2125550100",
+          "postal_code": "12201"
+        }
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile.shipping",
+        "body.shipping": {
+          "service": 1,
+          "recipientPhone": "2125550100",
+          "zipCode": "12201"
+        }
+      }
+    },
+    {
+      "input": {
+        "config": {
+          "practice_id": "98859901",
+          "api_network_id": "10001",
+          "location_id": "10002",
+          "vendor_id": "10003",
+          "timezone_name": "America/New_York",
+          "create_order_enabled": true,
+          "default_payor_type": "cash",
+          "default_memo_policy": "safe_summary_only",
+          "reference_data_ready": true,
+          "status_update_enabled": true,
+          "status_update_capability_ready": true,
+          "shipping_update_enabled": true,
+          "shipping_update_capability_ready": true,
+          "data_push_enabled": false
+        },
+        "external_reference_handle": "synthetic-reference",
+        "allowed_shipping_codes": [
+          1
+        ],
+        "shipping": {
+          "service": 1,
+          "tracking": "SYNTHETIC-TRACKING",
+          "tracking_url": "https://tracking.example.invalid/synthetic",
+          "recipient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "address_1": "100 Synthetic Way",
+            "email": "synthetic@example.invalid",
+            "phone": "2125550100"
+          }
+        }
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile.shipping",
+        "body.shipping": {
+          "service": 1,
+          "tracking": "SYNTHETIC-TRACKING",
+          "tracking_url": "https://tracking.example.invalid/synthetic",
+          "recipient": {
+            "first_name": "Morgan",
+            "last_name": "Example",
+            "address_1": "100 Synthetic Way",
+            "email": "synthetic@example.invalid",
+            "phone": "2125550100"
+          }
+        }
+      }
+    }
+  ]
+}

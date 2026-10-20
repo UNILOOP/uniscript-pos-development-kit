@@ -36,6 +36,16 @@ return [
         if (($input['authenticated_receipt'] ?? false) !== true || !is_string($input['receipt_handle'] ?? null)) { return new Result('validation_rejection', 'callback.unauthenticated'); }
         return new Result('success', 'callback.proposed', $services->request('commands', 'propose', ['command' => 'normalized_event', 'receipt_handle' => $input['receipt_handle'], 'event_id' => $input['event_id'] ?? null, 'status' => 'received']));
     },
-    'catalog.preview' => static fn(Invocation $invocation, Services $services): Result => new Result('success', 'catalog.preview', ['proposals' => $services->request('resources', 'read', ['resource' => 'catalog'])['records'], 'applied' => false]),
+    'catalog.preview' => static function (Invocation $invocation, Services $services): Result {
+        $records = $invocation->input()['records'] ?? null;
+        if (! is_array($records) || ! array_is_list($records) || $records === [] || count($records) > 1000) { return new Result('validation_rejection', 'catalog.records_invalid'); }
+        $proposals = [];
+        foreach ($records as $record) {
+            if (is_array($record) && is_string($record['vendor_product'] ?? null) && preg_match('/\A[1-9][0-9]{0,14}\z/D', $record['vendor_product']) === 1) { $record['vendor_product'] = (int) $record['vendor_product']; }
+            if (! is_array($record) || ! is_string($record['source_key'] ?? null) || preg_match('/\A[\x21-\x7e]{1,200}\z/D', $record['source_key']) !== 1 || ! is_string($record['display_name'] ?? null) || trim($record['display_name']) === '' || strlen($record['display_name']) > 240 || (isset($record['canonical_item_handle']) && (! is_string($record['canonical_item_handle']) || preg_match('/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/Di', $record['canonical_item_handle']) !== 1)) || (isset($record['vendor_product']) && (! is_int($record['vendor_product']) || $record['vendor_product'] < 1 || $record['vendor_product'] > 9007199254740991))) { return new Result('validation_rejection', 'catalog.row_invalid'); }
+            $proposals[] = ['source_key' => $record['source_key'], 'display_name' => $record['display_name'], 'canonical_item_handle' => $record['canonical_item_handle'] ?? null, 'mapping_values' => isset($record['vendor_product']) ? ['vendor_product' => $record['vendor_product']] : null, 'warnings' => []];
+        }
+        return new Result('success', 'catalog.preview', ['proposals' => $proposals, 'applied' => false]);
+    },
     'reference.refresh' => static fn(Invocation $invocation, Services $services): Result => new Result('success', 'reference.refreshed', $services->request('storage', 'write', ['key' => 'reference', 'expected_revision' => $invocation->input()['expected_revision'] ?? 0, 'value' => ['synthetic' => true, 'values' => ['ground', 'overnight']]])),
 ];

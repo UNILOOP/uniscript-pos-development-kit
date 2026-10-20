@@ -12,8 +12,11 @@ final class ConformanceProfile
     public static function scenarios(string $operation,string $packageId='',int $manifestVersion=1,string $packageVersion=''): array
     {
         if($packageId==='uniscript/lifefile'){
-            $fixtures=JsonDocument::decode(file_get_contents(dirname(__DIR__).'/tests/fixtures/'.($packageVersion!==''&&version_compare($packageVersion,'1.0.4','>=')?'lifefile-canonical-conformance.json':'lifefile-conformance.json')),true);
+            $fixtures=JsonDocument::decode(file_get_contents(dirname(__DIR__).'/tests/fixtures/'.($packageVersion!==''&&version_compare($packageVersion,'1.0.5','>=')?'lifefile-amendment-conformance.json':($packageVersion!==''&&version_compare($packageVersion,'1.0.4','>=')?'lifefile-canonical-conformance.json':'lifefile-conformance.json'))),true);
             return $fixtures[$operation]??throw new RuntimeException('trusted_scenario_not_available:'.$operation);
+        }
+        if ($packageId === 'uniscript/demo' && $operation === 'catalog.preview' && $packageVersion !== '' && version_compare($packageVersion, '1.0.2', '>=')) {
+            return [['input' => ['records' => [['source_key' => 'synthetic-product-a', 'display_name' => 'Synthetic saline', 'vendor_product' => 7]]], 'kind' => 'success', 'expected_calls' => [], 'expected_proposals' => [['source_key' => 'synthetic-product-a', 'display_name' => 'Synthetic saline', 'canonical_item_handle' => null, 'mapping_values' => ['vendor_product' => 7], 'warnings' => []]]], ['input' => ['records' => [['source_key' => '', 'display_name' => 'Invalid']]], 'kind' => 'validation_rejection', 'expected_calls' => []]];
         }
         if($packageId==='uniscript/demo'&&$manifestVersion===2&&in_array($operation,['configuration.validate','health.probe'],true)){return [['input'=>['config'=>['vendor_id'=>'10001','location_id'=>'10002','api_network_id'=>'10003','mode'=>'mock']],'kind'=>'success'],['input'=>['config'=>['vendor_id'=>false,'location_id'=>'10002','api_network_id'=>'10003']],'kind'=>'validation_rejection']];}
         $order=['order_id'=>'synthetic-order'];
@@ -61,6 +64,7 @@ final class ConformanceProfile
         if($result->kind!==$scenario['kind']){throw new RuntimeException('conformance_unexpected_result:'.$operation);}
         if (isset($scenario['expected_calls']) && $calls !== $scenario['expected_calls']) { throw new RuntimeException('conformance_service_call_sequence:'.$operation); }
         if($result->kind==='validation_rejection'){return;}
+        if (isset($scenario['expected_proposals']) && ($result->data['proposals'] ?? null) !== $scenario['expected_proposals']) { throw new RuntimeException('conformance_catalog_projection'); }
         if($operation==='identity.describe'&&($result->data['package_id']??null)!==$packageId){throw new RuntimeException('conformance_identity');}
         if(in_array($operation,['orders.submit','orders.reconcile','orders.status.update','orders.shipping.update'],true)&&(!is_string($result->data['external_reference_handle']??null)||$result->data['external_reference_handle']==='')){throw new RuntimeException('conformance_acceptance_reference');}
         if(in_array($operation,['catalog.preview','inbound.decode'],true)&&($result->data['applied']??null)!==false){throw new RuntimeException('conformance_no_core_mutation');}
