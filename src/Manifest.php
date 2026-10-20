@@ -12,7 +12,7 @@ final class Manifest
     {
         $json = file_get_contents($root.'/integration.json');
         if ($json === false || strlen($json) > 65536) { throw new InvalidArgumentException('manifest_unreadable'); }
-        $manifest = json_decode($json, true, 32, JSON_THROW_ON_ERROR);
+        $manifest = JsonDocument::decode($json, true);
         $keys = ['manifest_version', 'package_id', 'publisher', 'integration_key', 'display_name', 'vendor_family', 'version', 'sdk_version', 'protocol_version', 'runtime', 'operations', 'capabilities', 'support'];
         if (!is_array($manifest) || array_diff($keys, array_keys($manifest)) !== [] || array_diff(array_keys($manifest), $keys) !== []) { throw new InvalidArgumentException('manifest_fields'); }
         if ($manifest['manifest_version'] !== 1 || $manifest['protocol_version'] !== '1' || $manifest['sdk_version'] !== '^1.0' || !preg_match('/\A[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*\z/D', $manifest['package_id']) || !str_starts_with($manifest['package_id'], $manifest['publisher'].'/') || !preg_match('/\A\d+\.\d+\.\d+\z/D', $manifest['version'])) { throw new InvalidArgumentException('manifest_identity'); }
@@ -26,11 +26,11 @@ final class Manifest
             foreach (['input_schema', 'output_schema'] as $field) {
                 self::path($operation[$field]);
                 if (!is_file($root.'/'.$operation[$field])) { throw new InvalidArgumentException('missing_schema'); }
-                json_decode(file_get_contents($root.'/'.$operation[$field]), true, 32, JSON_THROW_ON_ERROR);
+                JsonDocument::decode(file_get_contents($root.'/'.$operation[$field]), true);
             }
         }
         foreach (['composer.json', 'composer.lock'] as $file) {
-            json_decode(file_get_contents($root.'/'.$file), true, 32, JSON_THROW_ON_ERROR);
+            JsonDocument::decode(file_get_contents($root.'/'.$file), true);
         }
         return $manifest;
     }

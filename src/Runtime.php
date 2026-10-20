@@ -20,7 +20,10 @@ final class Runtime
         if ($operation === null) {
             return new Result('unsupported_operation', 'operation.unsupported');
         }
-        $handlers = require $this->packageRoot.'/'.$manifest['runtime']['entrypoint'];
+        foreach($manifest['runtime']['extensions'] as $extension){if(!extension_loaded($extension)){return new Result('permanent_failure','runtime.extension_unavailable');}}
+        $schemas=new SchemaValidator($this->packageRoot);
+        try{$schemas->validate($invocation->input(),$operation['input_schema']);}catch(\InvalidArgumentException $exception){return str_contains($exception->getMessage(),':$')?new Result('validation_rejection','schema.input_invalid'):new Result('permanent_failure','schema.unsupported');}
+        $handlers = (static function(string $entrypoint):mixed{return require $entrypoint;})($this->packageRoot.'/'.$manifest['runtime']['entrypoint']);
         $handler = $handlers[$operation['key']] ?? null;
         if (!is_callable($handler)) {
             return new Result('permanent_failure', 'handler.missing');
@@ -32,6 +35,7 @@ final class Runtime
         if ($result->kind === 'partial') {
             return new Result('permanent_failure', 'partial.not_certified');
         }
+        try{$schemas->validate($result->jsonSerialize(),$operation['output_schema']);}catch(\InvalidArgumentException){return new Result('permanent_failure','schema.output_invalid');}
         return $result;
     }
 }

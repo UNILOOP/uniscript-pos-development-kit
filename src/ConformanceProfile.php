@@ -9,8 +9,12 @@ use RuntimeException;
 /** Trusted synthetic scenarios, selected by platform profile rather than package assertions. */
 final class ConformanceProfile
 {
-    public static function scenarios(string $operation): array
+    public static function scenarios(string $operation,string $packageId=''): array
     {
+        if($packageId==='uniscript/lifefile'){
+            $fixtures=JsonDocument::decode(file_get_contents(dirname(__DIR__).'/tests/fixtures/lifefile-conformance.json'),true);
+            return $fixtures[$operation]??throw new RuntimeException('trusted_scenario_not_available:'.$operation);
+        }
         $order=['order_id'=>'synthetic-order'];
         $receipt=['authenticated_receipt'=>true,'receipt_handle'=>'synthetic-receipt','event_id'=>'synthetic-event'];
         return match($operation){
@@ -27,12 +31,26 @@ final class ConformanceProfile
         };
     }
 
+    public static function serviceResponse(string $packageId,array $scenario,array $request,SyntheticHost $host):array
+    {
+        $host->authorize($request);
+        $key=$request['service'].'.'.$request['action'];
+        if(isset($scenario['services'][$key])){return $scenario['services'][$key];}
+        if($packageId==='uniscript/lifefile'&&$key==='http.request'){
+            $args=$request['arguments'];
+            $expected=['lifefile.orders'=>'orders.submit','lifefile.status'=>'orders.status.update','lifefile.shipping'=>'orders.shipping.update'];
+            if(!isset($expected[$args['profile']??''])||($args['operation_key']??null)!==$expected[$args['profile']]||array_intersect(array_keys($args),['url','method','path','path_template','headers'])!==[]){throw new RuntimeException('synthetic_lifefile_endpoint_denied');}
+            return ['status'=>'accepted','external_reference_handle'=>'synthetic-reference'];
+        }
+        return $host->transport($request);
+    }
+
     public static function verify(string $operation,array $scenario,Result $result,string $packageId):void
     {
         if($result->kind!==$scenario['kind']){throw new RuntimeException('conformance_unexpected_result:'.$operation);}
         if($result->kind==='validation_rejection'){return;}
         if($operation==='identity.describe'&&($result->data['package_id']??null)!==$packageId){throw new RuntimeException('conformance_identity');}
-        if(in_array($operation,['orders.submit','orders.reconcile'],true)&&(!is_string($result->data['external_reference_handle']??null)||$result->data['external_reference_handle']==='')){throw new RuntimeException('conformance_acceptance_reference');}
+        if(in_array($operation,['orders.submit','orders.reconcile','orders.status.update','orders.shipping.update'],true)&&(!is_string($result->data['external_reference_handle']??null)||$result->data['external_reference_handle']==='')){throw new RuntimeException('conformance_acceptance_reference');}
         if(in_array($operation,['catalog.preview','inbound.decode'],true)&&($result->data['applied']??null)!==false){throw new RuntimeException('conformance_no_core_mutation');}
         if($operation==='reference.refresh'&&($result->data['revision']??null)!==1){throw new RuntimeException('conformance_resource_revision');}
     }

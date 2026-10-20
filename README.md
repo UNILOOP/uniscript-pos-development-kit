@@ -10,6 +10,8 @@ Requires PHP 8.4+ with ZIP for packaging, Docker Desktop with its Linux engine, 
 docker pull php:8.4-cli-alpine
 php tests/conformance.php
 php tests/http.php
+php tests/protocol-schema.php
+node --test tests/ui-bridge.test.mjs
 php tests/docker.php
 php bin/package.php examples/starter /tmp/starter.zip
 php bin/package.php examples/demo /tmp/demo.zip
@@ -60,6 +62,20 @@ The SDK sends scoped requests `{invocation_id, grant, service, action, arguments
 
 ## Isolation and remaining milestones
 
-Each runtime is nonroot, read-only, without Linux capabilities, host mounts, Docker socket, core source, secrets or a network interface. Memory/CPU/PID/tmpfs limits apply. Readiness requires a bounded health operation. Invocations launch fresh processes; deadline enforcement also runs inside the container. The trusted dispatcher relays scoped service requests to the single configured broker. Package output is untrusted and never authorizes a service or core mutation. Containers serving multiple connections remain a reviewed-package trust boundary, as in the proposal.
+Each runtime is nonroot, read-only, without Linux capabilities, host mounts, Docker socket, core source, secrets or a network interface. Memory/CPU/PID/tmpfs limits apply. Readiness requires a bounded health operation. Every invocation uses a fresh disposable networkless container pinned to that image. The trusted supervisor removes the invocation container on success, timeout or malformed output, so killing a Docker client cannot leave the worker or its temporary files behind. Deadline enforcement also runs inside the container. Reusable runtime pools remain a later optimization with separate concurrency and isolation validation. The trusted dispatcher relays scoped service requests to the single configured broker. Package output is untrusted and never authorizes a service or core mutation. Containers serving multiple connections remain a reviewed-package trust boundary, as in the proposal.
 
-This kit is a local vertical slice. Hosted developer sandboxes, separate production identities/IAM and build infrastructure, full canonical domain DTOs, governed credential HTTP primitives, durable vendor transport/ownership ledgers, full custom UI bridge, catalog import application, schema/data migrations, rollback floors and real LifeFile v2 parity remain separate delivery gates. Local JSON job files and synchronous worker control are not a production distributed control plane. The host retains approval, pharmacy opt-in, routing, clinical policy and audit.
+This kit is a local vertical slice. Hosted developer sandboxes, separate production identities/IAM and build infrastructure, full canonical domain DTOs, governed credential HTTP primitives, durable vendor transport/ownership ledgers, integrated custom UI hosting and bridge sessions, catalog import application, schema/data migrations, rollback floors and real LifeFile v2 parity remain separate delivery gates. Local JSON job files and synchronous worker control are not a production distributed control plane. The host retains approval, pharmacy opt-in, routing, clinical policy and audit.
+
+## Schema validation
+
+The runtime validates invocation input against its declared input schema and the entire result envelope against its output schema. This implementation supports an explicit bounded subset: `type`, `enum`, `const`, `required`, `properties`, `additionalProperties`, `items`, array/string length bounds, numeric bounds, `$defs`, `definitions`, `$ref`, and descriptive `title`/`description` metadata. Remote references, path traversal, cyclic references, unsupported drafts and every unsupported keyword fail closed. References may resolve within the same schema or another file inside the package; the host intake contract may impose stricter same-document reference rules. No network schema resolution occurs. Duplicate JSON keys reject validation.
+
+PHP represents an empty JSON object and empty JSON array as the same empty array after associative decoding; empty PHP arrays are accepted at object boundaries. Nonempty list inputs/results at object boundaries are rejected. DTO validation rejects unknown envelope fields, malformed result variants, ill-typed field errors/recovery, non-JSON values, impossible calendar dates and unsafe unknown-outcome retry guidance.
+
+## UI bridge module
+
+`ui/bridge.ts` provides `PackageBridge`, `PackageBridgeClient`, and `createPackageFrame` without frontend dependencies. Node 24 can run its synthetic host/client tests directly with type stripping. Bind `PackageBridge.receive` to the browser's message event and close it whenever actor/context/release changes. Create sessions and random nonces in trusted host code; send the initial binding only to the frame's exact window and separate immutable asset origin. Never obtain authority from a package-supplied actor or tenant value.
+
+The bridge validates origin, source window, nonce, session, protocol, execution revision, expected revision, operation class, message shape, JSON size and replay identity. Every request rechecks host authorization, including cached responses. Host handlers receive immutable host-owned context. Duplicate requests execute once in the UI session; durable domain idempotency and authorization still belong to the backend. Generic failures conceal internal diagnostics. The client validates response origins and bindings and has bounded pending requests/timeouts.
+
+The iframe helper requires a separate origin, `sandbox="allow-scripts allow-same-origin"`, and no-referrer policy. The host must additionally serve package assets with a restrictive CSP (including restricted `connect-src`, `form-action`, `frame-ancestors`) and govern immutable asset URLs and backend session lifetime. This module does not yet install custom screens in UniScript, publish frontend bundles or grant any credential access.

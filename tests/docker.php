@@ -44,4 +44,19 @@ foreach(['validation_rejection','temporary_failure'] as $kind){
     $stubCert=$platform->enqueue('certifications',['execution_uuid'=>$stub['execution_uuid'],'build_id'=>$stub['id'],'source_sha256'=>$stub['source_sha256'],'digests'=>$stub['digests']]);
     $platform->work();$stubCert=$platform->read('certifications',$stubCert['id']);successful($stubCert,'failed');check(str_contains($stubCert['_diagnostic'],'conformance_unexpected_result'),'stub_cannot_certify');
 }
-echo json_encode(['result'=>'passed','assertions'=>$assertions,'state'=>$state,'execution_uuid'=>$input['execution_uuid'],'build_id'=>$build['id'],'certification_id'=>$cert['id'],'digests'=>$build['digests']],JSON_THROW_ON_ERROR)."\n";
+
+// Worker-loss and deadline regressions prove that child work cannot survive the client.
+$timeoutEnv=$env;$timeoutEnv['operation']='health.probe';$timeoutEnv['deadline']=gmdate('Y-m-d\TH:i:s\Z',time()+2);
+$invocationName='uniscript-invocation-'.bin2hex(random_bytes(16));
+$command=array_merge(['docker','run','--rm','--name',$invocationName,'-i'],UniScript\Integration\RuntimeProcess::flags(),['--entrypoint','php','sha256:'.$build['digests']['executable_image_sha256'],'-r','file_put_contents("/tmp/leaked-invocation-state","sensitive"); sleep(30);']);
+$lost=UniScript\Integration\RuntimeProcess::invoke($command,$timeoutEnv,static fn(array $request):array=>[]);
+check($lost->kind==='unknown_remote_outcome','timeout_is_unknown');
+check(Process::run(['docker','ps','-a','-q','--filter','name=^/'.$invocationName.'$'])==='','timed_out_container_removed');
+$timeoutEnv['deadline']=gmdate('Y-m-d\TH:i:s\Z',time()+10);
+$invocationName='uniscript-invocation-'.bin2hex(random_bytes(16));
+$command=array_merge(['docker','run','--rm','--name',$invocationName,'-i'],UniScript\Integration\RuntimeProcess::flags(),['--entrypoint','php','sha256:'.$build['digests']['executable_image_sha256'],'-r','echo "malformed frame\n"; fflush(STDOUT); file_put_contents("/tmp/leaked-invocation-state","sensitive"); sleep(30);']);
+$lost=UniScript\Integration\RuntimeProcess::invoke($command,$timeoutEnv,static fn(array $request):array=>[]);
+check($lost->kind==='unknown_remote_outcome','malformed_worker_is_unknown');check(Process::run(['docker','ps','-a','-q','--filter','name=^/'.$invocationName.'$'])==='','malformed_worker_container_removed');
+$clean=Process::run(array_merge(['docker','run','--rm'],UniScript\Integration\RuntimeProcess::flags(),['--entrypoint','php','sha256:'.$build['digests']['executable_image_sha256'],'-r','echo file_exists("/tmp/leaked-invocation-state")?"leaked":"clean";']));
+check($clean==='clean','subsequent_invocation_has_clean_tmp');
+echo json_encode(['result'=>'passed','assertions'=>$assertions,'execution_uuid'=>$input['execution_uuid'],'digests'=>$build['digests']],JSON_THROW_ON_ERROR)."\n";

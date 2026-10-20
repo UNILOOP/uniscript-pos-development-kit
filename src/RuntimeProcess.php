@@ -12,6 +12,13 @@ final class RuntimeProcess
 {
     public static function invoke(array $command, array $envelope, Closure $services): Result
     {
+        $container=null;
+        if(($command[0]??null)==='docker'&&($command[1]??null)==='run'){
+            $nameIndex=array_search('--name',$command,true);
+            if($nameIndex===false){$container='uniscript-invocation-'.bin2hex(random_bytes(16));array_splice($command,2,0,['--name',$container]);}
+            else{$container=$command[$nameIndex+1]??null;}
+            if(!is_string($container)||!preg_match('/\Auniscript-invocation-[a-f0-9]{32}\z/D',$container)){throw new RuntimeException('invalid_runtime_container_name');}
+        }
         // Validate before any untrusted process starts.
         $invocation=Invocation::fromArray($envelope);
         $process=proc_open($command,[0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']],$pipes);
@@ -47,6 +54,8 @@ final class RuntimeProcess
         } finally {
             if (($status['running']??true)===true) { proc_terminate($process,9); }
             foreach($pipes as $pipe){fclose($pipe);}proc_close($process);
+            // Killing the Docker client does not kill its container; remove it explicitly.
+            if($container!==null){try{Process::run(['docker','rm','-f',$container],15);}catch(\Throwable $cleanup){if(!str_contains($cleanup->getMessage(),'No such container')){throw new RuntimeException('runtime_container_cleanup_failed');}}}
         }
     }
 

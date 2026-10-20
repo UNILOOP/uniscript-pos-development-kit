@@ -23,10 +23,7 @@ final class SyntheticHost
 
     public function transport(array $request): array
     {
-        $grant = $this->grants[$request['grant']] ?? null;
-        if ($grant === null || $grant['expires'] <= time() || ($grant['scope']['invocation_id'] ?? null) !== $request['invocation_id'] || !in_array($request['service'].'.'.$request['action'], $grant['permissions'], true)) {
-            throw new RuntimeException('grant_denied');
-        }
+        $grant=$this->authorize($request);
         $args = $request['arguments'];
         $namespace = implode(':', array_map(static fn(string $key): string => $grant['scope'][$key], ['package_id', 'connection_id', 'environment']));
         return match ($request['service'].'.'.$request['action']) {
@@ -37,6 +34,15 @@ final class SyntheticHost
             'commands.propose' => ['proposal_handle' => 'proposal-'.hash('sha256', json_encode($args, JSON_THROW_ON_ERROR)), 'applied' => false],
             default => throw new RuntimeException('service_denied'),
         };
+    }
+
+    public function authorize(array $request):array
+    {
+        $grant = $this->grants[$request['grant']] ?? null;
+        if ($grant === null || $grant['expires'] <= time() || ($grant['scope']['invocation_id'] ?? null) !== $request['invocation_id'] || !in_array($request['service'].'.'.$request['action'], $grant['permissions'], true)) {
+            throw new RuntimeException('grant_denied');
+        }
+        return $grant;
     }
 
     private function write(string $namespace, array $args): array
@@ -50,11 +56,11 @@ final class SyntheticHost
 
     private function http(string $namespace, array $args): array
     {
-        if (($args['endpoint_profile'] ?? null) !== 'synthetic-pos' || !in_array($args['method'] ?? null, ['GET', 'POST'], true) || !in_array($args['path'] ?? null, ['/orders', '/orders/reconcile'], true) || array_intersect(array_keys($args), ['url', 'headers', 'credential']) !== []) {
+        if (!in_array($args['profile'] ?? null, ['synthetic.orders', 'synthetic.reconcile'], true) || ($args['operation_key']??null) !== ($args['profile']==='synthetic.orders'?'orders.submit':'orders.reconcile') || array_intersect(array_keys($args), ['url', 'method', 'path', 'headers', 'credential']) !== []) {
             throw new RuntimeException('endpoint_denied');
         }
         $key = $namespace.':'.($args['idempotency_key'] ?? '');
-        if ($args['method'] === 'GET') { return $this->orders[$key] ?? ['status' => 'not_found']; }
+        if ($args['profile'] === 'synthetic.reconcile') { return $this->orders[$key] ?? ['status' => 'not_found']; }
         if (isset($this->orders[$key])) { return $this->orders[$key]; }
         $this->providerSubmissions++;
         $response = ['status' => 'accepted', 'external_reference_handle' => 'synthetic-order-'.substr(hash('sha256', $key), 0, 16)];

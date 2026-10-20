@@ -13,12 +13,12 @@ return [
     'orders.validate' => static fn(Invocation $invocation, Services $services): Result => isset($invocation->input()['order_id']) ? new Result('success', 'order.valid') : new Result('validation_rejection', 'order.invalid', [], [['path' => 'order_id', 'reason_code' => 'required']]),
     'orders.submit' => static function (Invocation $invocation, Services $services): Result {
         if (!isset($invocation->input()['order_id'])) { return new Result('validation_rejection', 'order.invalid', [], [['path' => 'order_id', 'reason_code' => 'required']]); }
-        $response = $services->request('http', 'request', ['endpoint_profile' => 'synthetic-pos', 'method' => 'POST', 'path' => '/orders', 'idempotency_key' => $invocation->idempotencyKey(), 'body' => $invocation->input()]);
+        $response = $services->request('http', 'request', ['profile' => 'synthetic.orders', 'operation_key' => $invocation->operation(), 'parameters' => [], 'idempotency_key' => $invocation->idempotencyKey(), 'body' => $invocation->input()]);
         if ($response['status'] === 'unknown') { return new Result('unknown_remote_outcome', 'order.acceptance_unknown', [], [], ['action' => 'reconcile', 'resubmit_allowed' => false]); }
         return new Result('remote_acceptance', 'order.accepted', ['external_reference_handle' => $response['external_reference_handle']]);
     },
     'orders.reconcile' => static function (Invocation $invocation, Services $services): Result {
-        $response = $services->request('http', 'request', ['endpoint_profile' => 'synthetic-pos', 'method' => 'GET', 'path' => '/orders/reconcile', 'idempotency_key' => $invocation->idempotencyKey()]);
+        $response = $services->request('http', 'request', ['profile' => 'synthetic.reconcile', 'operation_key' => $invocation->operation(), 'parameters' => [], 'idempotency_key' => $invocation->idempotencyKey()]);
         return $response['status'] === 'accepted' ? new Result('remote_acceptance', 'order.reconciled', ['external_reference_handle' => $response['external_reference_handle']]) : new Result('unknown_remote_outcome', 'order.not_observed', [], [], ['action' => 'operator_review', 'resubmit_allowed' => false]);
     },
     'inbound.decode' => static function (Invocation $invocation, Services $services): Result {
