@@ -150,9 +150,10 @@ final class Platform
         Process::run(array_merge(['docker','run','-d','--name',$name],RuntimeProcess::flags(),['--env','EXECUTION_REVISION='.$record['execution_uuid'],$image]),30);
         $running=Process::run(['docker','inspect','--format','{{.State.Running}}',$name],30);
         if($running!=='true'){throw new RuntimeException('runtime_not_ready');}
-        $health=$this->syntheticEnvelope($record,['package_id'=>$cert['_package_id']],'health.probe');
+        $readinessOperation=ConformanceProfile::readinessOperation($cert['_package_id']);
+        $health=$this->syntheticEnvelope($record,['package_id'=>$cert['_package_id']],$readinessOperation);
         $health['environment']=$record['environment'];
-        $health['input']=ConformanceProfile::scenarios('health.probe',$cert['_package_id'],$cert['_manifest_version']??1)[0]['input'];
+        $health['input']=ConformanceProfile::scenarios($readinessOperation,$cert['_package_id'],$cert['_manifest_version']??1)[0]['input'];
         $health['service_grant']='readiness-no-services';$health['request_budget']=0;
         $probe=['docker','exec','-i','--env','PACKAGE_ROOT=/package','--env','EXECUTION_REVISION='.$record['execution_uuid'],'--env','SERVICE_TRANSPORT=stdio',$name,'timeout','-s','KILL','10','php','-d','display_errors=0','/opt/kit/bin/invoke.php'];
         $result=RuntimeProcess::invoke($probe,$health,static fn(array $request):array=>throw new RuntimeException('readiness_services_denied'));
@@ -171,11 +172,11 @@ final class Platform
         if(!hash_equals('sha256:'.$deployment['executable_image_sha256'],$image)){throw new RuntimeException('deployment_image_drift');}
         $invocationContainer='uniscript-invocation-'.bin2hex(random_bytes(16));
         $command=array_merge(['docker','run','--rm','--name',$invocationContainer,'-i'],RuntimeProcess::flags(),['--env','PACKAGE_ROOT=/package','--env','EXECUTION_REVISION='.$deployment['execution_uuid'],'--env','SERVICE_TRANSPORT=stdio','--entrypoint','timeout',$image,'-s','KILL',(string)max(1,min(30,strtotime($envelope['deadline'])-time())),'php','-d','display_errors=0','-d','log_errors=0','/opt/kit/bin/invoke.php']);
-        return RuntimeProcess::invoke($command,$envelope,static function(array $request):array{
+        return RuntimeProcess::invoke($command,$envelope,static function(array $request)use($envelope):array{
             $endpoint=getenv('HOST_SERVICES_URL')?:throw new RuntimeException('host_services_unconfigured');
             $parts=parse_url($endpoint);if(!is_array($parts)||!in_array($parts['scheme']??'',['http','https'],true)||isset($parts['user'])||isset($parts['pass'])){throw new RuntimeException('host_services_endpoint_invalid');}
             $ctx=stream_context_create(['http'=>['method'=>'POST','header'=>"Content-Type: application/json\r\n",'content'=>json_encode($request,JSON_THROW_ON_ERROR),'timeout'=>5,'follow_location'=>0,'ignore_errors'=>true],'ssl'=>['verify_peer'=>true,'verify_peer_name'=>true]]);
-            $response=file_get_contents($endpoint,false,$ctx,0,1048577);if($response===false||strlen($response)>1048576){throw new RuntimeException('host_services_transport_failed');}
+            $limit=PayloadLimits::forPackage($request['package_id']??$envelope['package_id']??'');$response=file_get_contents($endpoint,false,$ctx,0,$limit+1);if($response===false||strlen($response)>$limit){throw new RuntimeException('host_services_transport_failed');}
             $decoded=json_decode($response,true,32,JSON_THROW_ON_ERROR);
             $headers=http_get_last_response_headers();
             if(!isset($headers[0])||!preg_match('~\s2\d\d\s~',$headers[0])){throw new RuntimeException('host_services_denied');}

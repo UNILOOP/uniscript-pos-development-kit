@@ -20,7 +20,7 @@ final class RuntimeProcess
             if(!is_string($container)||!preg_match('/\Auniscript-invocation-[a-f0-9]{32}\z/D',$container)){throw new RuntimeException('invalid_runtime_container_name');}
         }
         // Validate before any untrusted process starts.
-        $invocation=Invocation::fromArray($envelope);
+        $invocation=Invocation::fromArray($envelope);$limit=PayloadLimits::forPackage($envelope['package_id']);
         $process=proc_open($command,[0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']],$pipes);
         if (!is_resource($process)) { throw new RuntimeException('runtime_start_failed'); }
         fwrite($pipes[0],json_encode($envelope,JSON_THROW_ON_ERROR)."\n");fflush($pipes[0]);
@@ -29,7 +29,7 @@ final class RuntimeProcess
         try {
             do {
                 $chunk=stream_get_contents($pipes[1]);$buffer.=$chunk;stream_get_contents($pipes[2],65536);
-                if (strlen($buffer)>1048576 || microtime(true)-$started>30 || strtotime($envelope['deadline'])<=time()) { throw new RuntimeException('runtime_limit'); }
+                if (strlen($buffer)>$limit || microtime(true)-$started>30 || strtotime($envelope['deadline'])<=time()) { throw new RuntimeException('runtime_limit'); }
                 while (($newline=strpos($buffer,"\n"))!==false) {
                     $line=substr($buffer,0,$newline);$buffer=substr($buffer,$newline+1);
                     $message=json_decode($line,true,32,JSON_THROW_ON_ERROR);
@@ -41,7 +41,7 @@ final class RuntimeProcess
                         fwrite($pipes[0],json_encode($reply,JSON_THROW_ON_ERROR)."\n");fflush($pipes[0]);
                     } else {
                         if ($result!==null) { throw new RuntimeException('multiple_results'); }
-                        $result=Result::fromArray($message);
+                        $result=Result::fromArray($message,$limit);
                     }
                 }
                 $status=proc_get_status($process);

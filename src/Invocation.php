@@ -16,7 +16,7 @@ final readonly class Invocation
         $required=['protocol_version','invocation_id','command_id','attempt_id','correlation_id','package_id','execution_revision','connection_id','organization_id','location_id','environment','operation','schema_version','routing_revision','configuration_revision','mapping_revision','credential_revision','idempotency_key','deadline','actor_id','request_budget','input','service_grant'];
         if(array_diff($required,array_keys($envelope))!==[]||array_diff(array_keys($envelope),[...$required,'deployment_environment'])!==[]){throw new InvalidArgumentException('invalid_envelope_fields');}
         JsonValue::assert($envelope);
-        if(strlen(json_encode($envelope,JSON_THROW_ON_ERROR))>1048576){throw new InvalidArgumentException('envelope_too_large');}
+        if(strlen(json_encode($envelope,JSON_THROW_ON_ERROR))>PayloadLimits::forPackage($envelope['package_id']??'')){throw new InvalidArgumentException('envelope_too_large');}
         if (($envelope['protocol_version'] ?? null) !== '1') {
             throw new InvalidArgumentException('unsupported_protocol');
         }

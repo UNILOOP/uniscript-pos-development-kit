@@ -11,6 +11,10 @@ final class ConformanceProfile
 {
     public static function scenarios(string $operation,string $packageId='',int $manifestVersion=1,string $packageVersion=''): array
     {
+        if ($packageId === 'uniscript/lifefile-v2') {
+            $fixtures = JsonDocument::decode(file_get_contents(dirname(__DIR__).'/tests/fixtures/lifefile-api-v2-conformance.json'), true);
+            return $fixtures[$operation] ?? throw new RuntimeException('trusted_scenario_not_available:'.$operation);
+        }
         if($packageId==='uniscript/lifefile'){
             $fixtures=JsonDocument::decode(file_get_contents(dirname(__DIR__).'/tests/fixtures/'.($packageVersion!==''&&version_compare($packageVersion,'1.0.5','>=')?'lifefile-amendment-conformance.json':($packageVersion!==''&&version_compare($packageVersion,'1.0.4','>=')?'lifefile-canonical-conformance.json':'lifefile-conformance.json'))),true);
             return $fixtures[$operation]??throw new RuntimeException('trusted_scenario_not_available:'.$operation);
@@ -51,6 +55,11 @@ final class ConformanceProfile
         };
     }
 
+    public static function readinessOperation(string $packageId): string
+    {
+        return $packageId === 'uniscript/lifefile-v2' ? 'identity.describe' : 'health.probe';
+    }
+
     public static function serviceResponse(string $packageId,array $scenario,array $request,SyntheticHost $host):array
     {
         $host->authorize($request);
@@ -68,6 +77,11 @@ final class ConformanceProfile
         }
         $key=$request['service'].'.'.$request['action'];
         if(isset($scenario['services'][$key])){return $scenario['services'][$key];}
+        if ($packageId === 'uniscript/lifefile-v2' && $key === 'http.request') {
+            $args = $request['arguments'];
+            if (($args['profile'] ?? null) !== 'lifefile-v2.api' || !is_string($args['operation_key'] ?? null) || !is_string($args['parameters']['operation_id'] ?? null) || array_intersect(array_keys($args), ['url', 'method', 'path', 'path_template', 'headers']) !== []) { throw new RuntimeException('synthetic_lifefile_v2_endpoint_denied'); }
+            return ['status' => 'accepted', 'external_reference_handle' => 'synthetic-reference', 'data' => ['type' => 'success', 'data' => []]];
+        }
         if($packageId==='uniscript/lifefile'&&$key==='http.request'){
             $args=$request['arguments'];
             $expected=['lifefile.orders'=>'orders.submit','lifefile.status'=>'orders.status.update','lifefile.shipping'=>'orders.shipping.update'];
@@ -96,6 +110,6 @@ final class ConformanceProfile
         if($operation==='identity.describe'&&($result->data['package_id']??null)!==$packageId){throw new RuntimeException('conformance_identity');}
         if(in_array($operation,['orders.submit','orders.reconcile','orders.status.update','orders.shipping.update'],true)&&(!is_string($result->data['external_reference_handle']??null)||$result->data['external_reference_handle']==='')){throw new RuntimeException('conformance_acceptance_reference');}
         if(in_array($operation,['catalog.preview','inbound.decode'],true)&&($result->data['applied']??null)!==false){throw new RuntimeException('conformance_no_core_mutation');}
-        if($operation==='reference.refresh'&&($result->data['revision']??null)!==1){throw new RuntimeException('conformance_resource_revision');}
+        if($operation==='reference.refresh'&&$packageId!=='uniscript/lifefile-v2'&&($result->data['revision']??null)!==1){throw new RuntimeException('conformance_resource_revision');}
     }
 }

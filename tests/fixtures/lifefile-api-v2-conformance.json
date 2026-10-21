@@ -1,0 +1,1175 @@
+{
+  "identity.describe": [
+    {
+      "input": [],
+      "kind": "success",
+      "expected_calls": []
+    }
+  ],
+  "configuration.validate": [
+    {
+      "input": {
+        "config": {
+          "base_url": "https://vendor.example/api/v2",
+          "vendor_id": "synthetic-vendor",
+          "location_id": "100",
+          "practice_id": "200"
+        }
+      },
+      "kind": "success",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "config": {
+          "base_url": "https://vendor.example/api/v2",
+          "vendor_id": "synthetic-vendor",
+          "location_id": "100",
+          "practice_id": "200",
+          "api_network_id": "legacy"
+        }
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "health.probe": [
+    {
+      "input": {
+        "config": {
+          "base_url": "https://vendor.example/api/v2",
+          "vendor_id": "synthetic-vendor",
+          "location_id": "100",
+          "practice_id": "200"
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "pingGet",
+        "operation_key": "health.probe"
+      }
+    },
+    {
+      "input": [],
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "connection.test": [
+    {
+      "input": {
+        "config": {
+          "base_url": "https://vendor.example/api/v2",
+          "vendor_id": "synthetic-vendor",
+          "location_id": "100",
+          "practice_id": "200"
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "currentApiUser",
+        "operation_key": "connection.test"
+      }
+    },
+    {
+      "input": [],
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "reference.refresh": [
+    {
+      "input": {
+        "config": {
+          "base_url": "https://vendor.example/api/v2",
+          "vendor_id": "synthetic-vendor",
+          "location_id": "100",
+          "practice_id": "200"
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "listStatuses",
+        "operation_key": "reference.refresh"
+      }
+    },
+    {
+      "input": [],
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "operation_key": "reference.refresh"
+      }
+    }
+  ],
+  "orders.validate": [
+    {
+      "input": {
+        "config": {
+          "base_url": "https://vendor.example/api/v2",
+          "vendor_id": "synthetic-vendor",
+          "location_id": "100",
+          "practice_id": "200"
+        },
+        "lifefile_order": {
+          "message": {
+            "id": 123
+          },
+          "order": {
+            "location": {
+              "id": 100
+            },
+            "patient": {
+              "firstName": "Synthetic",
+              "lastName": "Patient",
+              "dateOfBirth": "1990-01-01"
+            },
+            "prescriber": {
+              "firstName": "Synthetic",
+              "lastName": "Prescriber",
+              "npi": "1234567890"
+            },
+            "billing": {
+              "payorType": "pat"
+            },
+            "rxs": [
+              {
+                "rxType": "new",
+                "uuid": "a1030ee2-d9eb-4f45-b944-7646db136545",
+                "drugName": "Synthetic medication",
+                "scheduleCode": "O",
+                "quantity": "30",
+                "directions": "Take daily",
+                "refills": 0,
+                "dateWritten": "2026-10-21",
+                "daysSupply": 30
+              }
+            ]
+          }
+        }
+      },
+      "kind": "success",
+      "expected_calls": []
+    },
+    {
+      "input": [],
+      "kind": "validation_rejection",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "config": {
+          "base_url": "https://vendor.example/api/v2",
+          "vendor_id": "synthetic-vendor",
+          "location_id": "100",
+          "practice_id": "200"
+        },
+        "lifefile_order": {
+          "message": {
+            "id": 1
+          },
+          "order": {
+            "location": {
+              "id": 100
+            },
+            "rxs": [
+              {
+                "drugName": "Unsigned controlled",
+                "scheduleCode": "2"
+              }
+            ]
+          }
+        }
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "orders.submit": [
+    {
+      "input": {
+        "config": {
+          "base_url": "https://vendor.example/api/v2",
+          "vendor_id": "synthetic-vendor",
+          "location_id": "100",
+          "practice_id": "200"
+        },
+        "lifefile_order": {
+          "message": {
+            "id": 123
+          },
+          "order": {
+            "location": {
+              "id": 100
+            },
+            "patient": {
+              "firstName": "Synthetic",
+              "lastName": "Patient",
+              "dateOfBirth": "1990-01-01"
+            },
+            "prescriber": {
+              "firstName": "Synthetic",
+              "lastName": "Prescriber",
+              "npi": "1234567890"
+            },
+            "billing": {
+              "payorType": "pat"
+            },
+            "rxs": [
+              {
+                "rxType": "new",
+                "uuid": "a1030ee2-d9eb-4f45-b944-7646db136545",
+                "drugName": "Synthetic medication",
+                "scheduleCode": "O",
+                "quantity": "30",
+                "directions": "Take daily",
+                "refills": 0,
+                "dateWritten": "2026-10-21",
+                "daysSupply": 30
+              }
+            ]
+          }
+        }
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_body": {
+        "message": {
+          "id": 123
+        },
+        "order": {
+          "location": {
+            "id": 100
+          },
+          "patient": {
+            "firstName": "Synthetic",
+            "lastName": "Patient",
+            "dateOfBirth": "1990-01-01"
+          },
+          "prescriber": {
+            "firstName": "Synthetic",
+            "lastName": "Prescriber",
+            "npi": "1234567890"
+          },
+          "billing": {
+            "payorType": "pat"
+          },
+          "rxs": [
+            {
+              "rxType": "new",
+              "uuid": "a1030ee2-d9eb-4f45-b944-7646db136545",
+              "drugName": "Synthetic medication",
+              "scheduleCode": "O",
+              "quantity": "30",
+              "directions": "Take daily",
+              "refills": 0,
+              "dateWritten": "2026-10-21",
+              "daysSupply": 30
+            }
+          ]
+        }
+      },
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "createOrder",
+        "operation_key": "orders.submit"
+      }
+    },
+    {
+      "input": [],
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "orders.reconcile": [
+    {
+      "input": {
+        "external_reference_handle": "synthetic-reference"
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "showOrder",
+        "parameters.external_reference_handle": "synthetic-reference",
+        "operation_key": "orders.reconcile"
+      }
+    },
+    {
+      "input": [],
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "orders.status.update": [
+    {
+      "input": {
+        "external_reference_handle": "synthetic-reference",
+        "status": "b731c"
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "updateOrderStatus",
+        "parameters.external_reference_handle": "synthetic-reference",
+        "operation_key": "orders.status.update"
+      },
+      "expected_http_body": {
+        "status": "b731c"
+      }
+    },
+    {
+      "input": [],
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "orders.shipping.update": [
+    {
+      "input": {
+        "external_reference_handle": "synthetic-reference",
+        "shipping": []
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "updateOrderShipping",
+        "parameters.external_reference_handle": "synthetic-reference",
+        "operation_key": "orders.shipping.update"
+      },
+      "expected_http_body": {
+        "shipping": []
+      }
+    },
+    {
+      "input": [],
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "catalog.preview": [
+    {
+      "input": {
+        "records": [
+          {
+            "lf_product_id": "1001",
+            "drug_name": "Synthetic medication",
+            "schedule_code": "O"
+          }
+        ]
+      },
+      "kind": "success",
+      "expected_calls": [],
+      "expected_proposals": [
+        {
+          "source_key": "1001",
+          "display_name": "Synthetic medication",
+          "canonical_item_handle": null,
+          "mapping_values": {
+            "lf_product_id": 1001,
+            "default_drug_name": "Synthetic medication",
+            "schedule_code": "O"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "input": [],
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "inbound.decode": [
+    {
+      "input": {
+        "authenticated_receipt": true,
+        "receipt_handle": "synthetic-receipt",
+        "events": [
+          {
+            "eventId": "synthetic-event",
+            "orderId": "123",
+            "practiceId": "200",
+            "rxStatus": "Delivered"
+          }
+        ]
+      },
+      "kind": "success",
+      "expected_calls": [
+        "commands.propose"
+      ]
+    },
+    {
+      "input": {
+        "authenticated_receipt": false
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "lifefile.api.execute": [
+    {
+      "input": {
+        "operation_id": "token",
+        "parameters": [],
+        "body": {
+          "grant_type": "client_credentials"
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "token",
+        "operation_key": "lifefile.api.execute"
+      },
+      "expected_http_body": {
+        "grant_type": "client_credentials"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "revokeCurrentToken",
+        "parameters": [],
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "revokeCurrentToken",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "currentApiUser",
+        "parameters": [],
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "currentApiUser",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "rotateCurrentSecret",
+        "parameters": [],
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "rotateCurrentSecret",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "listOrders",
+        "parameters": [],
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "listOrders",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "showOrder",
+        "parameters": {
+          "external_reference_handle": "synthetic-reference"
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "showOrder",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "getOrderStatus",
+        "parameters": {
+          "external_reference_handle": "synthetic-reference"
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "getOrderStatus",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "updateOrderStatus",
+        "parameters": {
+          "external_reference_handle": "synthetic-reference"
+        },
+        "body": {
+          "status": "Synthetic"
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "updateOrderStatus",
+        "operation_key": "lifefile.api.execute"
+      },
+      "expected_http_body": {
+        "status": "Synthetic"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "getOrderShipping",
+        "parameters": {
+          "external_reference_handle": "synthetic-reference"
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "getOrderShipping",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "updateOrderShipping",
+        "parameters": {
+          "external_reference_handle": "synthetic-reference"
+        },
+        "body": {
+          "shipping": []
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "updateOrderShipping",
+        "operation_key": "lifefile.api.execute"
+      },
+      "expected_http_body": {
+        "shipping": []
+      }
+    },
+    {
+      "input": {
+        "operation_id": "appendOrderDocumentPages",
+        "parameters": {
+          "external_reference_handle": "synthetic-reference"
+        },
+        "body": {
+          "pdfBase64": "JVBERi0xLjcgc3ludGhldGlj"
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "appendOrderDocumentPages",
+        "operation_key": "lifefile.api.execute"
+      },
+      "expected_http_body": {
+        "pdfBase64": "JVBERi0xLjcgc3ludGhldGlj"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "getOrderDocument",
+        "parameters": {
+          "external_reference_handle": "synthetic-reference"
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "getOrderDocument",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "linkOrders",
+        "parameters": [],
+        "body": {
+          "masterOrderLinkRequest": 1,
+          "masterOrderLinkScope": "Billing",
+          "childOrders": [
+            1
+          ]
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "linkOrders",
+        "operation_key": "lifefile.api.execute"
+      },
+      "expected_http_body": {
+        "masterOrderLinkRequest": 1,
+        "masterOrderLinkScope": "Billing",
+        "childOrders": [
+          1
+        ]
+      }
+    },
+    {
+      "input": {
+        "operation_id": "listPracticeNotes",
+        "parameters": {
+          "path": {
+            "practiceId": 1
+          }
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "listPracticeNotes",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "createPracticeNote",
+        "parameters": {
+          "path": {
+            "practiceId": 1
+          }
+        },
+        "body": {
+          "text": "Called the Practice regarding renewal."
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "createPracticeNote",
+        "operation_key": "lifefile.api.execute"
+      },
+      "expected_http_body": {
+        "text": "Called the Practice regarding renewal."
+      }
+    },
+    {
+      "input": {
+        "operation_id": "getPracticeNote",
+        "parameters": {
+          "path": {
+            "practiceId": 1,
+            "noteId": 1
+          }
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "getPracticeNote",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "deactivatePracticeNote",
+        "parameters": {
+          "path": {
+            "practiceId": 1,
+            "noteId": 1
+          }
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "deactivatePracticeNote",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "reactivatePracticeNote",
+        "parameters": {
+          "path": {
+            "practiceId": 1,
+            "noteId": 1
+          }
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "reactivatePracticeNote",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "listPracticeShippingServices",
+        "parameters": {
+          "path": {
+            "practiceId": 1
+          }
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "listPracticeShippingServices",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "assignPracticeShippingService",
+        "parameters": {
+          "path": {
+            "practiceId": 1
+          }
+        },
+        "body": {
+          "shippingServiceId": 1
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "assignPracticeShippingService",
+        "operation_key": "lifefile.api.execute"
+      },
+      "expected_http_body": {
+        "shippingServiceId": 1
+      }
+    },
+    {
+      "input": {
+        "operation_id": "showPracticeShippingService",
+        "parameters": {
+          "path": {
+            "practiceId": 1,
+            "shippingServiceId": 1
+          }
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "showPracticeShippingService",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "deactivatePracticeShippingService",
+        "parameters": {
+          "path": {
+            "practiceId": 1,
+            "shippingServiceId": 1
+          }
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "deactivatePracticeShippingService",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "updatePracticeShippingService",
+        "parameters": {
+          "path": {
+            "practiceId": 1,
+            "shippingServiceId": 1
+          }
+        },
+        "body": []
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "updatePracticeShippingService",
+        "operation_key": "lifefile.api.execute"
+      },
+      "expected_http_body": []
+    },
+    {
+      "input": {
+        "operation_id": "createPricingQuote",
+        "parameters": [],
+        "body": {
+          "locationId": 110267,
+          "productId": 300122283,
+          "practiceId": 931875,
+          "quantity": 1
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "createPricingQuote",
+        "operation_key": "lifefile.api.execute"
+      },
+      "expected_http_body": {
+        "locationId": 110267,
+        "productId": 300122283,
+        "practiceId": 931875,
+        "quantity": 1
+      }
+    },
+    {
+      "input": {
+        "operation_id": "listLocations",
+        "parameters": [],
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "listLocations",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "showLocation",
+        "parameters": {
+          "path": {
+            "locationId": 1
+          }
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "showLocation",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "listShippingServices",
+        "parameters": [],
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "listShippingServices",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "createShippingService",
+        "parameters": [],
+        "body": {
+          "locationId": 1,
+          "name": "Synthetic",
+          "type": "shipping",
+          "price": 1
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "createShippingService",
+        "operation_key": "lifefile.api.execute"
+      },
+      "expected_http_body": {
+        "locationId": 1,
+        "name": "Synthetic",
+        "type": "shipping",
+        "price": 1
+      }
+    },
+    {
+      "input": {
+        "operation_id": "showShippingService",
+        "parameters": {
+          "path": {
+            "shippingServiceId": 1
+          }
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "showShippingService",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "replaceShippingService",
+        "parameters": {
+          "path": {
+            "shippingServiceId": 1
+          }
+        },
+        "body": {
+          "locationId": 1,
+          "name": "Synthetic",
+          "type": "shipping",
+          "price": 1,
+          "carrier": "Synthetic",
+          "carrierKey": "Synthetic",
+          "serviceCode": "Synthetic",
+          "visibleToDoctors": true,
+          "visibleToPatients": true,
+          "sortPosition": 1,
+          "color": "AABBCC"
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "replaceShippingService",
+        "operation_key": "lifefile.api.execute"
+      },
+      "expected_http_body": {
+        "locationId": 1,
+        "name": "Synthetic",
+        "type": "shipping",
+        "price": 1,
+        "carrier": "Synthetic",
+        "carrierKey": "Synthetic",
+        "serviceCode": "Synthetic",
+        "visibleToDoctors": true,
+        "visibleToPatients": true,
+        "sortPosition": 1,
+        "color": "AABBCC"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "listStatuses",
+        "parameters": [],
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "listStatuses",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "listLocationShippingConfigurations",
+        "parameters": {
+          "path": {
+            "locationId": 1
+          }
+        },
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "listLocationShippingConfigurations",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "pingGet",
+        "parameters": [],
+        "body": null
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_projection": {
+        "profile": "lifefile-v2.api",
+        "parameters.operation_id": "pingGet",
+        "operation_key": "lifefile.api.execute"
+      }
+    },
+    {
+      "input": {
+        "operation_id": "createOrder",
+        "parameters": [],
+        "body": {
+          "message": {
+            "id": 123
+          },
+          "order": {
+            "location": {
+              "id": 100
+            },
+            "patient": {
+              "firstName": "Synthetic",
+              "lastName": "Patient",
+              "dateOfBirth": "1990-01-01"
+            },
+            "prescriber": {
+              "firstName": "Synthetic",
+              "lastName": "Prescriber",
+              "npi": "1234567890"
+            },
+            "billing": {
+              "payorType": "pat"
+            },
+            "rxs": [
+              {
+                "rxType": "new",
+                "uuid": "a1030ee2-d9eb-4f45-b944-7646db136545",
+                "drugName": "Synthetic medication",
+                "scheduleCode": "O",
+                "quantity": "30",
+                "directions": "Take daily",
+                "refills": 0,
+                "dateWritten": "2026-10-21",
+                "daysSupply": 30
+              }
+            ]
+          }
+        }
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ]
+}

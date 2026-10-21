@@ -22,7 +22,7 @@ try{
             if(!isset($_FILES['archive'])||$_FILES['archive']['error']!==UPLOAD_ERR_OK||!is_uploaded_file($_FILES['archive']['tmp_name'])){throw new RuntimeException('archive_required');}
             $result=Platform::publicRecord($platform->enqueue($kind,$_POST,$_FILES['archive']['tmp_name']));http_response_code(202);
         }else{
-            $json=file_get_contents('php://input',false,null,0,1048577);if(strlen($json)>1048576){throw new RuntimeException('request_limit');}
+            $readLimit=$kind===null?12582912:1048576;$json=file_get_contents('php://input',false,null,0,$readLimit+1);if(strlen($json)>$readLimit){throw new RuntimeException('request_limit');}
             $input=json_decode($json,true,32,JSON_THROW_ON_ERROR);if(!is_array($input)){throw new RuntimeException('invalid_request');}
             $result=$kind===null?$platform->invoke($input):Platform::publicRecord($platform->enqueue($kind,$input));
             if($kind!==null){http_response_code(202);}
