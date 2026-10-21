@@ -663,10 +663,10 @@
         "operation_id": "linkOrders",
         "parameters": [],
         "body": {
-          "masterOrderLinkRequest": 1,
-          "masterOrderLinkScope": "Billing",
+          "masterOrderLinkRequest": "a1030ee2-d9eb-4f45-b944-7646db136545",
+          "masterOrderLinkScope": "All",
           "childOrders": [
-            1
+            "b1030ee2-d9eb-4f45-b944-7646db136545"
           ]
         }
       },
@@ -680,10 +680,10 @@
         "operation_key": "lifefile.api.execute"
       },
       "expected_http_body": {
-        "masterOrderLinkRequest": 1,
-        "masterOrderLinkScope": "Billing",
+        "masterOrderLinkRequest": "a1030ee2-d9eb-4f45-b944-7646db136545",
+        "masterOrderLinkScope": "All",
         "childOrders": [
-          1
+          "b1030ee2-d9eb-4f45-b944-7646db136545"
         ]
       }
     },
@@ -1166,6 +1166,21 @@
               }
             ]
           }
+        }
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "operation_id": "linkOrders",
+        "parameters": {},
+        "body": {
+          "masterOrderLinkRequest": 123,
+          "masterOrderLinkScope": "All",
+          "childOrders": [
+            456
+          ]
         }
       },
       "kind": "validation_rejection",
