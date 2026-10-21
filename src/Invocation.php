@@ -40,7 +40,7 @@ final readonly class Invocation
         if (!is_int($envelope['request_budget'] ?? null) || $envelope['request_budget'] < 0 || $envelope['request_budget'] > 100) {
             throw new InvalidArgumentException('invalid_request_budget');
         }
-        if (array_key_exists('deployment_environment',$envelope) && !in_array($envelope['deployment_environment'], ['local', 'dev'], true)) {
+        if (array_key_exists('deployment_environment',$envelope) && !in_array($envelope['deployment_environment'], ($envelope['package_id']??null)==='uniscript/lifefile-v2'?['local','dev','production']:['local','dev'], true)) {
             throw new InvalidArgumentException('invalid_deployment_environment');
         }
         if ((!is_array($envelope['input'] ?? null)||!JsonValue::object($envelope['input'])) || !is_string($envelope['service_grant'] ?? null) || $envelope['service_grant'] === '' || strlen($envelope['service_grant'])>8192) {

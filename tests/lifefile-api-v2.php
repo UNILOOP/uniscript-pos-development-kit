@@ -37,4 +37,14 @@ check($result->kind==='success'&&$calls===1,'8mib_pdf_input_stdio_round_trip');
 $scope=envelope('lifefile.api.execute',['operation_id'=>'getOrderDocument','parameters'=>['external_reference_handle'=>'synthetic-reference']]);$scope['service_grant']='synthetic-stdio-grant';
 $result=UniScript\Integration\RuntimeProcess::invoke($command,$scope,static fn(array $request):array=>['status'=>'accepted','data'=>['type'=>'success','data'=>['pdfBase64'=>$pdf]]]);
 check($result->kind==='success'&&($result->data['response']['data']['pdfBase64']??null)===$pdf,'8mib_pdf_output_stdio_round_trip');
+$scope=envelope('identity.describe',[]);$scope['environment']='production';$scope['deployment_environment']='production';Invocation::fromArray($scope);$assertions++;
+$scope['package_id']='uniscript/lifefile';try{Invocation::fromArray($scope);throw new RuntimeException('legacy_production_override_allowed');}catch(InvalidArgumentException){$assertions++;}
+$platform=new UniScript\Integration\Platform(sys_get_temp_dir().'/kit-v2-environments-'.bin2hex(random_bytes(6)));
+$certificate=['id'=>str_repeat('a',32),'status'=>'passed','_package_id'=>'uniscript/lifefile-v2'];$platform->save('certifications',$certificate);
+$deployment=['deployment_uuid'=>'synthetic-production','execution_uuid'=>'synthetic-execution','certification_id'=>$certificate['id'],'environment'=>'production','digests'=>[]];
+check($platform->enqueue('deployments',$deployment)['status']==='queued','new_v2_production_requires_passed_certificate');
+$certificate['_package_id']='uniscript/lifefile';$platform->save('certifications',$certificate);
+try{$platform->enqueue('deployments',[...$deployment,'deployment_uuid'=>'legacy-production']);throw new RuntimeException('legacy_production_allowed');}catch(RuntimeException $error){check($error->getMessage()==='environment_not_enabled','legacy_production_remains_disabled');}
+$certificate['_package_id']='uniscript/lifefile-v2';$certificate['status']='failed';$platform->save('certifications',$certificate);
+try{$platform->enqueue('deployments',[...$deployment,'deployment_uuid'=>'uncertified-production']);throw new RuntimeException('uncertified_production_allowed');}catch(RuntimeException $error){check($error->getMessage()==='environment_not_enabled','uncertified_production_denied');}
 echo json_encode(['result'=>'passed','assertions'=>$assertions,'scenarios'=>$scenariosTested],JSON_THROW_ON_ERROR)."\n";

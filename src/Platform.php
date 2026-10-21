@@ -33,7 +33,10 @@ final class Platform
         foreach(($kind==='deployments'?['deployment_uuid','execution_uuid','certification_id','environment','digests']:($kind==='certifications'?['execution_uuid','build_id','source_sha256','digests']:['execution_uuid','source_sha256','package_id','package_version'])) as $key){if(!isset($input[$key])){throw new RuntimeException('missing_'.$key);}}
         if(!is_string($input['execution_uuid'])||!preg_match('/\A[a-zA-Z0-9-]{8,100}\z/D',$input['execution_uuid'])){throw new RuntimeException('invalid_execution_uuid');}
         if($kind!=='deployments'&&(!is_string($input['source_sha256'])||!preg_match('/\A[a-f0-9]{64}\z/D',$input['source_sha256']))){throw new RuntimeException('invalid_source_hash');}
-        if($kind==='deployments'&&!in_array($input['environment'],['local','sandbox','dev'],true)){throw new RuntimeException('environment_not_enabled');}
+        if($kind==='deployments'&&!in_array($input['environment'],['local','sandbox','dev'],true)){
+            $productionCert=$input['environment']==='production'?$this->read('certifications',$input['certification_id']):null;
+            if($productionCert===null||($productionCert['_package_id']??null)!=='uniscript/lifefile-v2'||($productionCert['status']??null)!=='passed'){throw new RuntimeException('environment_not_enabled');}
+        }
         if($kind==='builds') {
             if($archive===null||filesize($archive)>20971520||!hash_equals($input['source_sha256'],hash_file('sha256',$archive))){throw new RuntimeException('source_integrity_failed');}
             if(!is_string($input['package_id'])||!is_string($input['package_version'])){throw new RuntimeException('invalid_package_identity');}
@@ -89,7 +92,7 @@ final class Platform
         if(!preg_match('/\Asha256:[a-f0-9]{64}\z/D',$baseId)){throw new RuntimeException('base_image_not_content_addressed');}
         mkdir($job.'/src');mkdir($job.'/bin');
         // Only the SDK and runtime supervisor enter the image, never platform keys or controller source.
-        $runtimeFiles=['Invocation.php','Result.php','Services.php','ScopedServices.php','Runtime.php','Manifest.php','SchemaValidator.php','JsonValue.php','JsonDocument.php','ConfigurationSchema.php','ResourceSchema.php','StaticUi.php'];
+        $runtimeFiles=['PayloadLimits.php','Invocation.php','Result.php','Services.php','ScopedServices.php','Runtime.php','Manifest.php','SchemaValidator.php','JsonValue.php','JsonDocument.php','ConfigurationSchema.php','ResourceSchema.php','StaticUi.php'];
         foreach($runtimeFiles as $file){copy($root.'/src/'.$file,$job.'/src/'.$file);}
         foreach(['invoke.php','runtime-server.php'] as $file){copy($root.'/bin/'.$file,$job.'/bin/'.$file);}
         copy($root.'/bootstrap.php',$job.'/bootstrap.php');copy($root.'/docker/Dockerfile',$job.'/Dockerfile');
@@ -164,7 +167,7 @@ final class Platform
 
     public function invoke(array $envelope): Result
     {
-        Invocation::fromArray($envelope);if($envelope['environment']==='production'||($envelope['deployment_environment']??$envelope['environment'])==='production'){throw new RuntimeException('production_not_enabled');}$deployment=null;
+        Invocation::fromArray($envelope);if(($envelope['package_id']??null)!=='uniscript/lifefile-v2'&&($envelope['environment']==='production'||($envelope['deployment_environment']??$envelope['environment'])==='production')){throw new RuntimeException('production_not_enabled');}$deployment=null;
         foreach(glob($this->state.'/deployments/*.json') as $file){$candidate=json_decode(file_get_contents($file),true,32,JSON_THROW_ON_ERROR);if($candidate['status']==='ready'&&$candidate['execution_uuid']===$envelope['execution_revision']&&$candidate['_package_id']===$envelope['package_id']&&$candidate['environment']===($envelope['deployment_environment']??$envelope['environment'])){$deployment=$candidate;break;}}
         if($deployment===null){throw new RuntimeException('deployment_not_ready');}
         if(!in_array($envelope['operation'],$deployment['_operations'],true)){return new Result('unsupported_operation','operation.not_certified');}
@@ -176,7 +179,7 @@ final class Platform
             $endpoint=getenv('HOST_SERVICES_URL')?:throw new RuntimeException('host_services_unconfigured');
             $parts=parse_url($endpoint);if(!is_array($parts)||!in_array($parts['scheme']??'',['http','https'],true)||isset($parts['user'])||isset($parts['pass'])){throw new RuntimeException('host_services_endpoint_invalid');}
             $ctx=stream_context_create(['http'=>['method'=>'POST','header'=>"Content-Type: application/json\r\n",'content'=>json_encode($request,JSON_THROW_ON_ERROR),'timeout'=>5,'follow_location'=>0,'ignore_errors'=>true],'ssl'=>['verify_peer'=>true,'verify_peer_name'=>true]]);
-            $limit=PayloadLimits::forPackage($request['package_id']??$envelope['package_id']??'');$response=file_get_contents($endpoint,false,$ctx,0,$limit+1);if($response===false||strlen($response)>$limit){throw new RuntimeException('host_services_transport_failed');}
+            $limit=PayloadLimits::forPackage($envelope['package_id']);$response=file_get_contents($endpoint,false,$ctx,0,$limit+1);if($response===false||strlen($response)>$limit){throw new RuntimeException('host_services_transport_failed');}
             $decoded=json_decode($response,true,32,JSON_THROW_ON_ERROR);
             $headers=http_get_last_response_headers();
             if(!isset($headers[0])||!preg_match('~\s2\d\d\s~',$headers[0])){throw new RuntimeException('host_services_denied');}
