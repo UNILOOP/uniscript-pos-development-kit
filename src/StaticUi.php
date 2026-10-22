@@ -12,7 +12,17 @@ final class StaticUi
     {
         if (!array_key_exists('ui', $manifest)) { return ['sha256' => hash('sha256',''), 'files' => []]; }
         $ui=$manifest['ui'];
-        if (($manifest['manifest_version']??null)!==2 || !is_array($ui) || array_diff(array_keys($ui),['profile','entrypoint'])!==[] || ($ui['profile']??null)!=='static-v1' || !is_string($ui['entrypoint']??null) || !str_ends_with($ui['entrypoint'],'.html')) { throw new InvalidArgumentException('ui_contract'); }
+        if (($manifest['manifest_version']??null)!==2 || !is_array($ui) || array_diff(array_keys($ui),['profile','entrypoint','surfaces'])!==[] || ($ui['profile']??null)!=='static-v1' || !is_string($ui['entrypoint']??null) || !str_ends_with($ui['entrypoint'],'.html')) { throw new InvalidArgumentException('ui_contract'); }
+        if (array_key_exists('surfaces', $ui)) {
+            $surfaces = $ui['surfaces'];
+            $allowed = ['connection.setup', 'catalog.item.mapping', 'pharmacy.order.details', 'sender.order.details'];
+            if (!is_array($surfaces) || !array_is_list($surfaces) || count($surfaces) < 1 || count($surfaces) > 4) { throw new InvalidArgumentException('ui_surfaces'); }
+            $seen = [];
+            foreach ($surfaces as $surface) {
+                if (!is_string($surface) || !in_array($surface, $allowed, true) || in_array($surface, $seen, true)) { throw new InvalidArgumentException('ui_surfaces'); }
+                $seen[] = $surface;
+            }
+        }
         self::path($ui['entrypoint']);
         $base=realpath($root.'/ui');if($base===false||is_link($root.'/ui')||!is_file($root.'/'.$ui['entrypoint'])){throw new InvalidArgumentException('ui_entrypoint');}
         $files=[];$bytes=0;

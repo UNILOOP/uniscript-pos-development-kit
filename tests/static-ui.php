@@ -15,5 +15,11 @@ check(StaticUi::inspect(dirname(__DIR__).'/examples/demo',Manifest::read(dirname
 foreach([['profile'=>'static-v1','entrypoint'=>'ui/../index.html'],['profile'=>'static-v1','entrypoint'=>'ui/server.php'],['profile'=>'static-v1','entrypoint'=>'ui/index.html','url'=>'https://unsafe.invalid'],['profile'=>'unknown','entrypoint'=>'ui/index.html']] as $definition){
     try{StaticUi::inspect($root,[...$manifest,'ui'=>$definition]);throw new RuntimeException('invalid_ui_accepted');}catch(InvalidArgumentException){check(true);}
 }
+$surfaces = ['connection.setup', 'catalog.item.mapping', 'pharmacy.order.details', 'sender.order.details'];
+check(StaticUi::inspect($root, [...$manifest, 'ui' => [...$manifest['ui'], 'surfaces' => $surfaces]]) === $ui);
+foreach ([[], ['internal.admin'], ['connection.setup', 'connection.setup'], ['setup' => 'connection.setup'], 'connection.setup', null, [12], [['connection.setup']]] as $invalid) {
+    try { StaticUi::inspect($root, [...$manifest, 'ui' => [...$manifest['ui'], 'surfaces' => $invalid]]); throw new RuntimeException('invalid_surface_accepted'); }
+    catch (InvalidArgumentException) { check(true); }
+}
 $old=$manifest;$old['manifest_version']=1;try{StaticUi::inspect($root,$old);throw new RuntimeException('v1_ui_accepted');}catch(InvalidArgumentException){check(true);}
 echo json_encode(['result'=>'passed','assertions'=>$count,'ui_sha256'=>$ui['sha256']],JSON_THROW_ON_ERROR)."\n";
