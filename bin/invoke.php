@@ -33,7 +33,7 @@ try {
             return $reply['response'];
         }
         if ($endpoint === '') { throw new RuntimeException('host_services_unavailable'); }
-        $context = stream_context_create(['http' => ['method' => 'POST', 'header' => "Content-Type: application/json\r\n", 'content' => json_encode($request, JSON_THROW_ON_ERROR), 'timeout' => 5, 'follow_location' => 0, 'max_redirects' => 0], 'ssl' => ['verify_peer' => true, 'verify_peer_name' => true]]);
+        $context = stream_context_create(['http' => ['method' => 'POST', 'header' => "Content-Type: application/json\r\nAccept: application/json\r\nUser-Agent: UniScript-Package-Runtime/1\r\n", 'content' => json_encode($request, JSON_THROW_ON_ERROR), 'timeout' => 5, 'follow_location' => 0, 'max_redirects' => 0], 'ssl' => ['verify_peer' => true, 'verify_peer_name' => true]]);
         $response = file_get_contents($endpoint, false, $context, 0, $limit + 1);
         if ($response === false || strlen($response) > $limit) { throw new RuntimeException('service_transport_failed'); }
         return json_decode($response, true, 32, JSON_THROW_ON_ERROR);

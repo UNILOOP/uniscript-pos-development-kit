@@ -178,7 +178,7 @@ final class Platform
         return RuntimeProcess::invoke($command,$envelope,static function(array $request)use($envelope):array{
             $endpoint=getenv('HOST_SERVICES_URL')?:throw new RuntimeException('host_services_unconfigured');
             $parts=parse_url($endpoint);if(!is_array($parts)||!in_array($parts['scheme']??'',['http','https'],true)||isset($parts['user'])||isset($parts['pass'])){throw new RuntimeException('host_services_endpoint_invalid');}
-            $ctx=stream_context_create(['http'=>['method'=>'POST','header'=>"Content-Type: application/json\r\n",'content'=>json_encode($request,JSON_THROW_ON_ERROR),'timeout'=>5,'follow_location'=>0,'ignore_errors'=>true],'ssl'=>['verify_peer'=>true,'verify_peer_name'=>true]]);
+            $ctx=stream_context_create(['http'=>['method'=>'POST','header'=>"Content-Type: application/json\r\nAccept: application/json\r\nUser-Agent: UniScript-Package-Runtime/1\r\n",'content'=>json_encode($request,JSON_THROW_ON_ERROR),'timeout'=>5,'follow_location'=>0,'ignore_errors'=>true],'ssl'=>['verify_peer'=>true,'verify_peer_name'=>true]]);
             $limit=PayloadLimits::forPackage($envelope['package_id']);$response=file_get_contents($endpoint,false,$ctx,0,$limit+1);if($response===false||strlen($response)>$limit){throw new RuntimeException('host_services_transport_failed');}
             $decoded=json_decode($response,true,32,JSON_THROW_ON_ERROR);
             $headers=http_get_last_response_headers();
