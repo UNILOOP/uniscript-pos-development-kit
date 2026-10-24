@@ -18,7 +18,7 @@ cd uniscript-pos-development-kit
 
 Open **http://127.0.0.1:19100**. Select a reference or workspace package, create a connection, save test settings/credentials, run health and connection tests, activate, map a catalog item and submit a synthetic order. Exercise callbacks and inspect pharmacy/sender views.
 
-The GitHub repository may not exist during local preparation. Inside UniScript, start with `cd pos-packages/developer-kit` instead. The public kit runs without private application source.
+Inside UniScript, start with `cd pos-packages/developer-kit` instead. The public kit runs without private application source.
 
 ```sh
 ./dev-kit test
