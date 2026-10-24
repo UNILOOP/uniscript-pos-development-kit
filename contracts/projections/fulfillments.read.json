@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "fulfillments"
+  ],
+  "properties": {
+    "fulfillments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "uuid",
+          "status",
+          "carrier",
+          "tracking_present",
+          "shipped",
+          "delivered"
+        ],
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "carrier": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 240
+          },
+          "tracking_present": {
+            "type": "boolean"
+          },
+          "shipped": {
+            "type": "boolean"
+          },
+          "delivered": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "maxItems": 50
+    }
+  },
+  "additionalProperties": false
+}

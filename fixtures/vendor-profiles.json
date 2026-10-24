@@ -1,0 +1,40 @@
+{
+  "synthetic.health": {
+    "operations": [
+      "health.probe",
+      "connection.test"
+    ],
+    "mode": "read",
+    "response": {
+      "type": "success",
+      "data": {
+        "synthetic": true,
+        "account_access": true
+      }
+    }
+  },
+  "synthetic.orders": {
+    "operations": [
+      "orders.submit"
+    ],
+    "mode": "order"
+  },
+  "synthetic.reconcile": {
+    "operations": [
+      "orders.reconcile"
+    ],
+    "mode": "reconcile"
+  },
+  "synthetic.status": {
+    "operations": [
+      "orders.status.update"
+    ],
+    "mode": "action"
+  },
+  "synthetic.shipping": {
+    "operations": [
+      "orders.shipping.update"
+    ],
+    "mode": "action"
+  }
+}

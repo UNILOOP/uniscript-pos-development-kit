@@ -12,7 +12,9 @@ use UniScript\Integration\Runtime;
 use UniScript\Integration\ScopedServices;
 use UniScript\Integration\SyntheticHost;
 
-$root=$argv[1]??dirname(__DIR__).'/../uniscript/pos-packages/lifefile-v2';
+$root=$argv[1]??getenv('UNISCRIPT_LIFEFILE_PACKAGE');
+if(!is_string($root)||$root===''){throw new InvalidArgumentException('usage: php tests/lifefile-api-v2.php PACKAGE_SOURCE_DIRECTORY (or set UNISCRIPT_LIFEFILE_PACKAGE)');}
+if(!is_file($root.'/integration.json')){throw new InvalidArgumentException('lifefile_package_source_missing');}
 $manifest=Manifest::read($root);$assertions=0;$scenariosTested=0;
 function check(bool $condition,string $message):void{global $assertions;$assertions++;if(!$condition){throw new RuntimeException($message);}}
 function envelope(string $operation,array $input):array{return ['protocol_version'=>'1','invocation_id'=>'synthetic-invocation','command_id'=>'command','attempt_id'=>'attempt','correlation_id'=>'correlation','package_id'=>'uniscript/lifefile-v2','execution_revision'=>'revision','connection_id'=>'connection','organization_id'=>'organization','location_id'=>'location','environment'=>'local','actor_id'=>'actor','operation'=>$operation,'schema_version'=>'1','routing_revision'=>'1','configuration_revision'=>'1','mapping_revision'=>'1','credential_revision'=>'1','idempotency_key'=>'synthetic-key','deadline'=>gmdate('Y-m-d\TH:i:s\Z',time()+60),'request_budget'=>20,'input'=>$input,'service_grant'=>'pending'];}

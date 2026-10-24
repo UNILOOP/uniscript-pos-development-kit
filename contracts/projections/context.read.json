@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "package_id",
+    "package_version",
+    "execution_revision",
+    "environment",
+    "deployment_environment",
+    "connection_status",
+    "setup_test_current",
+    "surface",
+    "catalog_item_uuid",
+    "order_uuid",
+    "sensitive_operations_available"
+  ],
+  "properties": {
+    "package_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "package_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "execution_revision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "environment": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "deployment_environment": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "connection_status": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "setup_test_current": {
+      "type": "boolean"
+    },
+    "surface": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 240
+    },
+    "catalog_item_uuid": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 240
+    },
+    "order_uuid": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 240
+    },
+    "sensitive_operations_available": {
+      "const": false
+    }
+  },
+  "additionalProperties": false
+}

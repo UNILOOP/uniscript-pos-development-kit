@@ -3,6 +3,7 @@ FROM ${BASE_IMAGE}
 WORKDIR /opt/kit
 COPY bootstrap.php /opt/kit/bootstrap.php
 COPY src /opt/kit/src
+COPY contracts /opt/kit/contracts
 COPY bin/invoke.php bin/runtime-server.php /opt/kit/bin/
 COPY --chown=10001:10001 package /package
 USER 10001:10001

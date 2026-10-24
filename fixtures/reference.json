@@ -1,0 +1,113 @@
+{
+  "label": "Vendor-neutral reference fixture",
+  "package_id": "uniscript/reference-pos",
+  "configuration": {
+    "account_id": "synthetic-account",
+    "timezone_name": "UTC",
+    "display_label": "Local reference connection"
+  },
+  "credentials": {
+    "api_key": "local-development-only"
+  },
+  "mapping": {
+    "product_code": "synthetic-product-001",
+    "schedule_code": "O"
+  },
+  "catalog": [
+    {
+      "source_key": "synthetic-product-001",
+      "display_name": "Synthetic saline",
+      "product_code": "synthetic-product-001",
+      "schedule_code": "O"
+    }
+  ],
+  "order": {
+    "order_id": "synthetic-order",
+    "order": {
+      "order_id": "synthetic-order",
+      "patient": {
+        "first_name": "Synthetic",
+        "last_name": "Patient",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "address": {
+          "line1": "100 Example Street",
+          "city": "Test City",
+          "state": "CA",
+          "postal_code": "90001",
+          "country": "US"
+        },
+        "phone": "2025550100"
+      },
+      "prescriber": {
+        "first_name": "Synthetic",
+        "last_name": "Prescriber",
+        "npi": "1234567893",
+        "phone": "2025550101",
+        "address": {
+          "line1": "200 Example Street",
+          "city": "Test City",
+          "state": "CA",
+          "postal_code": "90001",
+          "country": "US"
+        }
+      },
+      "medications": [
+        {
+          "line_key": "synthetic-medication-1",
+          "name": "Synthetic saline",
+          "quantity": "1",
+          "quantity_unit": "each",
+          "directions": "SYNTHETIC TEST ONLY. DO NOT DISPENSE.",
+          "days_supply": 30,
+          "refills": 0,
+          "date_written": "2026-10-24",
+          "mapping": {}
+        }
+      ],
+      "billing": {
+        "payor_type": "pat"
+      }
+    }
+  },
+  "profiles": {
+    "synthetic.health": {
+      "operations": [
+        "health.probe",
+        "connection.test"
+      ],
+      "mode": "read",
+      "response": {
+        "type": "success",
+        "data": {
+          "synthetic": true,
+          "account_access": true
+        }
+      }
+    },
+    "synthetic.orders": {
+      "operations": [
+        "orders.submit"
+      ],
+      "mode": "order"
+    },
+    "synthetic.reconcile": {
+      "operations": [
+        "orders.reconcile"
+      ],
+      "mode": "reconcile"
+    },
+    "synthetic.status": {
+      "operations": [
+        "orders.status.update"
+      ],
+      "mode": "action"
+    },
+    "synthetic.shipping": {
+      "operations": [
+        "orders.shipping.update"
+      ],
+      "mode": "action"
+    }
+  }
+}

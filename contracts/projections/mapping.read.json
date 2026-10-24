@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema",
+    "values",
+    "revision",
+    "status"
+  ],
+  "properties": {
+    "schema": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "values": {
+      "type": [
+        "object",
+        "array"
+      ],
+      "maxItems": 0,
+      "description": "Host PHP empty values currently serialize as an empty array; populated values are an object."
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "status": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 240
+    }
+  },
+  "additionalProperties": false
+}

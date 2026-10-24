@@ -23,4 +23,10 @@ $many=[];for($i=0;$i<40;$i++){$many['field'.$i]=objectSchema(['a'=>(object)['typ
 denied(fn()=>ResourceSchema::assertDefinition((object)['type'=>'array','items'=>$row,'maxItems'=>1]));
 // Flat configuration and credentials remain closed to nested objects.
 denied(fn()=>UniScript\Integration\ConfigurationSchema::assertDefinition($schema));
-echo json_encode(['result'=>'passed','assertions'=>$assertions],JSON_THROW_ON_ERROR)."\n";
+
+$wire = UniScript\Integration\JsonDocument::decode('{"type":"object","additionalProperties":false,"required":["orderId"],"properties":{"orderId":{"type":"string","maxLength":100},"shipping-info":{"type":"object","additionalProperties":false,"required":[],"properties":{"trackingNumber":{"type":"string","maxLength":100}}}}}');
+UniScript\Integration\ResourceSchema::validateWireValues($wire, ['orderId' => 'synthetic-1', 'shipping-info' => ['trackingNumber' => 'synthetic-tracking']]);
+try { UniScript\Integration\ResourceSchema::assertDefinition($wire); throw new RuntimeException('wire keys leaked into ordinary resource schema'); } catch (InvalidArgumentException) {}
+$wire->properties->constructor = (object) ['type' => 'string', 'maxLength' => 100];
+try { UniScript\Integration\ResourceSchema::assertWireDefinition($wire); throw new RuntimeException('prototype key accepted'); } catch (InvalidArgumentException) {}
+echo json_encode(['result' => 'passed', 'assertions' => $assertions + 3, 'wire_schema' => 'passed'], JSON_THROW_ON_ERROR)."\n";

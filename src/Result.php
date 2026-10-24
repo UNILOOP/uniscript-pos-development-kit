@@ -9,7 +9,7 @@ use JsonSerializable;
 
 final readonly class Result implements JsonSerializable
 {
-    public const array KINDS = ['success', 'remote_acceptance', 'validation_rejection', 'unsupported_operation', 'temporary_failure', 'permanent_failure', 'unknown_remote_outcome', 'partial'];
+    public const array KINDS = ['success', 'remote_acceptance', 'validation_rejection', 'unsupported_operation', 'temporary_failure', 'permanent_failure', 'unknown_remote_outcome'];
 
     public function __construct(public string $kind, public string $reasonCode, public array $data = [], public array $fieldErrors = [], public array $recovery = [], int $maxBytes = 1048576)
     {

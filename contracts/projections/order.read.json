@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "uuid",
+    "status",
+    "route_version",
+    "delivery_status",
+    "pos_order_references",
+    "fulfillments"
+  ],
+  "properties": {
+    "uuid": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "route_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "delivery_status": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "pos_order_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "handle",
+          "status",
+          "present",
+          "fingerprint"
+        ],
+        "properties": {
+          "handle": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "status": {
+            "const": "accepted"
+          },
+          "present": {
+            "const": true
+          },
+          "fingerprint": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 12
+          }
+        },
+        "additionalProperties": false
+      },
+      "maxItems": 20
+    },
+    "fulfillments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "uuid",
+          "status",
+          "carrier",
+          "tracking_present",
+          "shipped",
+          "delivered"
+        ],
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "carrier": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 240
+          },
+          "tracking_present": {
+            "type": "boolean"
+          },
+          "shipped": {
+            "type": "boolean"
+          },
+          "delivered": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "maxItems": 50
+    }
+  },
+  "additionalProperties": false
+}

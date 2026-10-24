@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Trusted read-only account verification policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile_version",
+    "enabled",
+    "package_ids",
+    "transport_profile",
+    "principal_path",
+    "success_path",
+    "success_value",
+    "account_response_bindings",
+    "synthetic_only"
+  ],
+  "properties": {
+    "profile_version": {
+      "const": 1
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "package_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "maxLength": 150
+      }
+    },
+    "transport_profile": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9._-]{0,79}$"
+    },
+    "principal_path": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*){0,5}$",
+      "maxLength": 100
+    },
+    "success_path": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*){0,5}$",
+      "maxLength": 100
+    },
+    "success_value": {
+      "type": [
+        "string",
+        "number",
+        "boolean"
+      ]
+    },
+    "account_response_bindings": {
+      "type": "object",
+      "maxProperties": 8,
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*){0,5}$",
+        "maxLength": 100
+      }
+    },
+    "synthetic_only": {
+      "type": "boolean"
+    },
+    "challenge_path": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*){0,5}$",
+      "maxLength": 100
+    }
+  }
+}

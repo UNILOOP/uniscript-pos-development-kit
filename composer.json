@@ -1,6 +1,7 @@
 {
-  "name": "uniscript/integration-kit",
-  "description": "Standalone synthetic POS package SDK and trusted local platform tools",
+  "name": "uniloop/uniscript-pos-development-kit",
+  "description": "Vendor-neutral POS package development environment, contracts and isolated runtime tools",
+  "license": "MIT",
   "type": "library",
   "require": { "php": "^8.4" },
   "autoload": { "psr-4": { "UniScript\\Integration\\": "src/" } },

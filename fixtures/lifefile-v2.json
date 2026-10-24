@@ -1,0 +1,229 @@
+{
+  "label": "LifeFile v2 offline compatibility fixture",
+  "package_id": "uniscript/lifefile-v2",
+  "description": "Explicit offline compatibility fixtures for LifeFile v2. No live requests, real credentials, pharmacy accounts or clinical data. Not production certification.",
+  "callback_account_fields": {
+    "practiceId": "practice_id"
+  },
+  "configuration": {
+    "base_url": "https://vendor.example/api/v2",
+    "vendor_id": "synthetic-vendor",
+    "location_id": "100",
+    "practice_id": "200",
+    "timezone_name": "UTC",
+    "default_billing": "pat"
+  },
+  "credentials": {
+    "client_id": "local-development-only",
+    "client_secret": "local-development-only"
+  },
+  "mapping": {
+    "lf_product_id": 1001,
+    "default_drug_name": "Synthetic saline",
+    "schedule_code": "O"
+  },
+  "profiles": {
+    "lifefile-v2.api": {
+      "operations": [
+        "identity.describe",
+        "configuration.validate",
+        "health.probe",
+        "connection.test",
+        "orders.validate",
+        "orders.submit",
+        "orders.reconcile",
+        "orders.status.update",
+        "orders.shipping.update",
+        "catalog.preview",
+        "reference.refresh",
+        "lifefile.api.execute",
+        "inbound.decode"
+      ],
+      "max_request_bytes": 12582912,
+      "routes": {
+        "pingGet": {
+          "mode": "read",
+          "operations": [
+            "health.probe",
+            "lifefile.api.execute"
+          ],
+          "response": {
+            "type": "success",
+            "data": {
+              "message": "Synthetic pong"
+            }
+          }
+        },
+        "currentApiUser": {
+          "mode": "read",
+          "operations": [
+            "connection.test",
+            "lifefile.api.execute"
+          ],
+          "response": {
+            "type": "success",
+            "data": {
+              "id": 1,
+              "name": "Synthetic API user"
+            }
+          }
+        },
+        "createOrder": {
+          "mode": "order",
+          "operations": [
+            "orders.submit"
+          ],
+          "response": {
+            "type": "success",
+            "data": {
+              "id": "{{reference}}"
+            }
+          }
+        },
+        "showOrder": {
+          "mode": "reconcile",
+          "operations": [
+            "orders.reconcile",
+            "lifefile.api.execute"
+          ],
+          "response": {
+            "type": "success",
+            "data": {
+              "id": "{{reference}}"
+            }
+          }
+        },
+        "updateOrderStatus": {
+          "mode": "action",
+          "operations": [
+            "orders.status.update",
+            "lifefile.api.execute"
+          ],
+          "response": {
+            "type": "success",
+            "data": {}
+          }
+        },
+        "updateOrderShipping": {
+          "mode": "action",
+          "operations": [
+            "orders.shipping.update",
+            "lifefile.api.execute"
+          ],
+          "response": {
+            "type": "success",
+            "data": {}
+          }
+        },
+        "listStatuses": {
+          "mode": "read",
+          "operations": [
+            "reference.refresh",
+            "lifefile.api.execute"
+          ],
+          "response": {
+            "type": "success",
+            "data": []
+          }
+        },
+        "listShippingServices": {
+          "mode": "read",
+          "operations": [
+            "reference.refresh",
+            "lifefile.api.execute"
+          ],
+          "response": {
+            "type": "success",
+            "data": []
+          }
+        },
+        "listLocations": {
+          "mode": "read",
+          "operations": [
+            "reference.refresh",
+            "lifefile.api.execute"
+          ],
+          "response": {
+            "type": "success",
+            "data": []
+          }
+        },
+        "listLocationShippingConfigurations": {
+          "mode": "read",
+          "operations": [
+            "reference.refresh",
+            "lifefile.api.execute"
+          ],
+          "response": {
+            "type": "success",
+            "data": []
+          }
+        },
+        "listPracticeShippingServices": {
+          "mode": "read",
+          "operations": [
+            "reference.refresh",
+            "lifefile.api.execute"
+          ],
+          "response": {
+            "type": "success",
+            "data": []
+          }
+        }
+      }
+    }
+  },
+  "order": {
+    "order_id": "synthetic-order",
+    "order": {
+      "order_id": "synthetic-order",
+      "patient": {
+        "first_name": "Synthetic",
+        "last_name": "Patient",
+        "date_of_birth": "1990-01-01",
+        "gender": "male",
+        "address": {
+          "line1": "100 Example Street",
+          "city": "Test City",
+          "state": "CA",
+          "postal_code": "90001",
+          "country": "US"
+        },
+        "phone": "2025550100"
+      },
+      "prescriber": {
+        "first_name": "Synthetic",
+        "last_name": "Prescriber",
+        "npi": "1234567893",
+        "phone": "2025550101",
+        "address": {
+          "line1": "200 Example Street",
+          "city": "Test City",
+          "state": "CA",
+          "postal_code": "90001",
+          "country": "US"
+        }
+      },
+      "medications": [
+        {
+          "line_key": "synthetic-medication-1",
+          "name": "Synthetic saline",
+          "quantity": "1",
+          "quantity_unit": "each",
+          "directions": "SYNTHETIC TEST ONLY. DO NOT DISPENSE.",
+          "days_supply": 30,
+          "refills": 0,
+          "date_written": "2026-10-24",
+          "mapping": {
+            "lf_product_id": 1001,
+            "default_drug_name": "Synthetic saline",
+            "schedule_code": "O"
+          }
+        }
+      ],
+      "billing": {
+        "payor_type": "pat"
+      }
+    }
+  }
+}

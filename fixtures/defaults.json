@@ -1,0 +1,22 @@
+{
+  "configuration": {
+    "account_id": "synthetic-account",
+    "timezone_name": "UTC",
+    "display_label": "Local reference connection"
+  },
+  "credentials": {
+    "api_key": "local-development-only"
+  },
+  "mapping": {
+    "product_code": "synthetic-product-001",
+    "schedule_code": "O"
+  },
+  "catalog": [
+    {
+      "source_key": "synthetic-product-001",
+      "display_name": "Synthetic saline",
+      "product_code": "synthetic-product-001",
+      "schedule_code": "O"
+    }
+  ]
+}

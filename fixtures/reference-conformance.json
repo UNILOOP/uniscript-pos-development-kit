@@ -1,0 +1,276 @@
+{
+  "identity.describe": [
+    {
+      "input": {},
+      "kind": "success",
+      "expected_calls": []
+    }
+  ],
+  "configuration.validate": [
+    {
+      "input": {
+        "config": {
+          "account_id": "synthetic-account",
+          "timezone_name": "UTC",
+          "display_label": "Local reference connection"
+        }
+      },
+      "kind": "success",
+      "expected_calls": []
+    },
+    {
+      "input": {
+        "config": {
+          "account_id": false,
+          "timezone_name": "UTC"
+        }
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "health.probe": [
+    {
+      "input": {
+        "config": {
+          "account_id": "synthetic-account",
+          "timezone_name": "UTC",
+          "display_label": "Local reference connection"
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "services": {
+        "http.request": {
+          "status": "accepted",
+          "data": {
+            "synthetic": true
+          }
+        }
+      }
+    },
+    {
+      "input": {},
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "connection.test": [
+    {
+      "input": {
+        "config": {
+          "account_id": "synthetic-account",
+          "timezone_name": "UTC",
+          "display_label": "Local reference connection"
+        }
+      },
+      "kind": "success",
+      "expected_calls": [
+        "http.request"
+      ],
+      "services": {
+        "http.request": {
+          "status": "accepted",
+          "data": {
+            "synthetic": true
+          }
+        }
+      }
+    },
+    {
+      "input": {},
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "orders.validate": [
+    {
+      "input": {
+        "order_id": "synthetic-order"
+      },
+      "kind": "success",
+      "expected_calls": []
+    },
+    {
+      "input": {},
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "orders.submit": [
+    {
+      "input": {
+        "order_id": "synthetic-order"
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "expected_http_body": {
+        "order_id": "synthetic-order",
+        "scenario": "accepted"
+      }
+    },
+    {
+      "input": {},
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "orders.reconcile": [
+    {
+      "input": {
+        "order_id": "synthetic-order"
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ]
+    }
+  ],
+  "orders.status.update": [
+    {
+      "input": {
+        "external_reference_handle": "synthetic-reference",
+        "status": "in_progress"
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "services": {
+        "http.request": {
+          "status": "accepted",
+          "external_reference_handle": "synthetic-reference"
+        }
+      }
+    },
+    {
+      "input": {},
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "orders.shipping.update": [
+    {
+      "input": {
+        "external_reference_handle": "synthetic-reference",
+        "shipping": {
+          "service": "ground"
+        }
+      },
+      "kind": "remote_acceptance",
+      "expected_calls": [
+        "http.request"
+      ],
+      "services": {
+        "http.request": {
+          "status": "accepted",
+          "external_reference_handle": "synthetic-reference"
+        }
+      }
+    },
+    {
+      "input": {},
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "catalog.preview": [
+    {
+      "input": {
+        "records": [
+          {
+            "source_key": "synthetic-product-001",
+            "display_name": "Synthetic saline",
+            "product_code": "synthetic-product-001",
+            "schedule_code": "O"
+          }
+        ]
+      },
+      "kind": "success",
+      "expected_calls": [],
+      "expected_proposals": [
+        {
+          "source_key": "synthetic-product-001",
+          "display_name": "Synthetic saline",
+          "canonical_item_handle": null,
+          "mapping_values": {
+            "product_code": "synthetic-product-001",
+            "schedule_code": "O"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "input": {
+        "records": [
+          {
+            "source_key": "invalid"
+          }
+        ]
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ],
+  "reference.refresh": [
+    {
+      "input": {
+        "expected_revision": 0
+      },
+      "kind": "success",
+      "expected_calls": [
+        "storage.write"
+      ]
+    }
+  ],
+  "reference.inspect": [
+    {
+      "input": {},
+      "kind": "success",
+      "expected_calls": [
+        "storage.read"
+      ]
+    }
+  ],
+  "inbound.decode": [
+    {
+      "input": {
+        "authenticated_receipt": true,
+        "receipt_handle": "synthetic-receipt",
+        "events": [
+          {
+            "orderId": "synthetic-order",
+            "eventId": "synthetic-event",
+            "status": "shipped"
+          }
+        ]
+      },
+      "kind": "success",
+      "expected_calls": [
+        "commands.propose"
+      ],
+      "expected_event": {
+        "external_order_reference": "synthetic-order",
+        "event_id": "synthetic-event",
+        "normalized_status": "shipped",
+        "order_status": "ready",
+        "tracking_number": null,
+        "carrier": null,
+        "occurred_at": null
+      }
+    },
+    {
+      "input": {
+        "authenticated_receipt": false,
+        "events": []
+      },
+      "kind": "validation_rejection",
+      "expected_calls": []
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "host_reload_required"
+  ],
+  "properties": {
+    "host_reload_required": {
+      "const": true
+    }
+  },
+  "additionalProperties": false
+}

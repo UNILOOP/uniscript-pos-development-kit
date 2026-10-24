@@ -1,0 +1,271 @@
+{
+    "contract_version": "1.0.0",
+    "manifest_versions": [
+        1,
+        2
+    ],
+    "runtime": {
+        "php": "^8.4",
+        "sdk_versions": [
+            "^1.0"
+        ],
+        "protocol_versions": [
+            "1"
+        ],
+        "profiles": [
+            "standard"
+        ],
+        "extensions": [
+            "bcmath",
+            "ctype",
+            "curl",
+            "dom",
+            "fileinfo",
+            "filter",
+            "hash",
+            "iconv",
+            "intl",
+            "json",
+            "libxml",
+            "mbstring",
+            "openssl",
+            "pcre",
+            "simplexml",
+            "sodium",
+            "tokenizer",
+            "xml",
+            "xmlreader",
+            "xmlwriter",
+            "zip",
+            "zlib"
+        ],
+        "host_services": [
+            "storage.read",
+            "storage.write",
+            "resources.read",
+            "commands.propose",
+            "http.request"
+        ],
+        "result_kinds": [
+            "success",
+            "remote_acceptance",
+            "validation_rejection",
+            "unsupported_operation",
+            "temporary_failure",
+            "permanent_failure",
+            "unknown_remote_outcome"
+        ],
+        "composer_profile": "dependency-free-php",
+        "managed_profile_version": 1,
+        "managed_authentication_schemes": [
+            "basic",
+            "bearer",
+            "header_secret",
+            "oauth2_client_credentials"
+        ],
+        "custom_operations_require_certification_recipe": true
+    },
+    "manifest": {
+        "identifier_pattern": "[a-z][a-z0-9]*(?:-[a-z0-9]+)*",
+        "package_id_pattern": "[a-z][a-z0-9]*(?:-[a-z0-9]+)*/[a-z][a-z0-9]*(?:-[a-z0-9]+)*",
+        "version_format": "semver-with-optional-prerelease-without-build-metadata",
+        "reserved_integration_keys": [
+            "package",
+            "bestrx",
+            "lifefile",
+            "vantroute"
+        ],
+        "reserved_integration_key_prefixes": [
+            "placeholder"
+        ],
+        "required_capabilities": [
+            "submit",
+            "cancel",
+            "attachments",
+            "status_webhooks",
+            "manual_tracking",
+            "catalog_import",
+            "catalog_upload",
+            "health_checks",
+            "manual_catalog_management",
+            "manual_availability",
+            "manual_pricing",
+            "special_pricing_requests",
+            "label_printing",
+            "direct_ncpdp_script_acceptance",
+            "canonical_erx_intake",
+            "script_2017071",
+            "script_2023011",
+            "structured_sig_support",
+            "formulary_benefit_readiness",
+            "formulary_benefit_v60_readiness",
+            "real_time_benefit_readiness",
+            "rtpb_v13_readiness"
+        ],
+        "publisher_ownership_assigned_by_host": true
+    },
+    "limits": {
+        "archive": {
+            "archive_bytes": 20971520,
+            "expanded_bytes": 104857600,
+            "member_bytes": 8388608,
+            "manifest_bytes": 65536,
+            "composer_bytes": 1048576,
+            "schema_bytes": 262144,
+            "file_count": 2000,
+            "compression_ratio": 200,
+            "inspection_seconds": 15
+        },
+        "payload_profiles": {
+            "default": {
+                "invocation_bytes": 1048576,
+                "service_request_bytes": 131072,
+                "response_bytes": 1048576
+            },
+            "package_overrides": {
+                "uniscript/lifefile-v2": {
+                    "invocation_bytes": 12582912,
+                    "service_request_bytes": 12582912,
+                    "response_bytes": 12582912
+                }
+            }
+        },
+        "ui_bytes": 2097152,
+        "ui_files": 100,
+        "inbound_body_bytes": 65536,
+        "host_request_bytes": 131072,
+        "host_value_bytes": 65536,
+        "host_response_bytes": 262144
+    },
+    "ui": {
+        "profile": "static-v1",
+        "surfaces": {
+            "connection.setup": {
+                "queries": [
+                    "context.read",
+                    "config.read",
+                    "reference.timezones"
+                ],
+                "actions": [
+                    "config.save"
+                ]
+            },
+            "catalog.item.mapping": {
+                "queries": [
+                    "context.read",
+                    "mapping.read"
+                ],
+                "actions": [
+                    "mapping.save"
+                ]
+            },
+            "pharmacy.order.details": {
+                "queries": [
+                    "context.read",
+                    "order.read",
+                    "fulfillments.read"
+                ],
+                "actions": []
+            },
+            "sender.order.details": {
+                "queries": [
+                    "context.read",
+                    "order.read",
+                    "fulfillments.read"
+                ],
+                "actions": []
+            }
+        },
+        "legacy_diagnostics": {
+            "queries": [
+                "context.read"
+            ],
+            "actions": [
+                "diagnostics.refresh"
+            ]
+        },
+        "session_max_seconds": 300,
+        "request_max_bytes": 262144,
+        "resize_height": {
+            "minimum": 160,
+            "maximum": 10000
+        },
+        "separate_execution_origin": true,
+        "credential_controls_host_owned": true,
+        "bridge_sha256": "bbb71ddc7d3693e8427087e4f82b5d23b04cb53c2ff4a69bac27c1be6187f5d1",
+        "timezones_sha256": "15b1ad456c104b1909791ce3416e94ba938b479c8f93b3da98abd28841f22b43"
+    },
+    "projection_fields": {
+        "context.read": [
+            "package_id",
+            "package_version",
+            "execution_revision",
+            "environment",
+            "deployment_environment",
+            "connection_status",
+            "setup_test_current",
+            "surface",
+            "catalog_item_uuid",
+            "order_uuid",
+            "sensitive_operations_available"
+        ],
+        "config.read": [
+            "editable",
+            "schema",
+            "values",
+            "credentials_host_owned"
+        ],
+        "config.save": [
+            "host_reload_required"
+        ],
+        "mapping.read": [
+            "schema",
+            "values",
+            "revision",
+            "status"
+        ],
+        "mapping.save": [
+            "revision",
+            "status",
+            "host_reload_required"
+        ],
+        "reference.timezones": [
+            "options"
+        ],
+        "order.read": [
+            "uuid",
+            "status",
+            "route_version",
+            "delivery_status",
+            "pos_order_references",
+            "fulfillments"
+        ],
+        "fulfillments.read": [
+            "fulfillments"
+        ],
+        "pos_order_reference": [
+            "handle",
+            "status",
+            "present",
+            "fingerprint"
+        ],
+        "fulfillment": [
+            "uuid",
+            "status",
+            "carrier",
+            "tracking_present",
+            "shipped",
+            "delivered"
+        ]
+    },
+    "onboarding": {
+        "requirements_file": "host-requirements.json",
+        "requirements_contract_version": 1,
+        "publisher_assignment_required": true,
+        "managed_http_profiles_reviewed_by_host": true,
+        "inbound_profiles_reviewed_by_host": true,
+        "independent_certification_required": true,
+        "internal_release_approval_required": true,
+        "local_scenarios_authorize_vendor_access": false
+    }
+}

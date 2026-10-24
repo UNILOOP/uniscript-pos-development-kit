@@ -2,6 +2,10 @@
 !bootstrap.php
 !composer.json
 !README.md
+!LICENSE
+!contracts/**
+!fixtures/**
+!docs/**
 !src/**
 !bin/**
 !docker/**

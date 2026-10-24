@@ -9,6 +9,8 @@ use UniScript\Integration\Process;
 
 $state=sys_get_temp_dir().'/uniscript-platform-test-'.bin2hex(random_bytes(6));
 $platform=new Platform($state);$root=dirname(__DIR__);$assertions=0;
+$hostSentinel=$state.'/host-only-synthetic-fixture';
+file_put_contents($hostSentinel,'synthetic-host-only-fixture',LOCK_EX);
 function check(bool $condition,string $reason):void{global $assertions;$assertions++;if(!$condition){throw new RuntimeException('assertion_failed:'.$reason);}}
 function successful(array $record,string $status):void{check($record['status']===$status,json_encode($record,JSON_THROW_ON_ERROR));}
 $archive=$state.'/demo.zip';
@@ -27,9 +29,11 @@ try{
     $result=$platform->invoke($env);check($result->kind==='success'&&$result->data['package_id']==='uniscript/demo','real_runtime_identity');
     $env['operation']='undefined.operation';check($platform->invoke($env)->kind==='unsupported_operation','uncertified_operation_blocked');
     $env['deadline']='2000-01-01T00:00:00Z';try{$platform->invoke($env);check(false,'expired_deadline');}catch(InvalidArgumentException){check(true,'expired_deadline');}
-    $isolation=Process::run(['docker','exec',$container,'php','-d','display_errors=0','-r','echo json_encode(["write"=>@file_put_contents("/package/probe","x"),"socket"=>file_exists("/var/run/docker.sock"),"host_source"=>file_exists("/Users/sayeed99/projects/uniapps/uniscript/.env"),"egress"=>@fsockopen("1.1.1.1",443,$errno,$errstr,1)!==false]);']);
+    $isolation=Process::run(['docker','exec','--env','HOST_SENTINEL_PATH='.$hostSentinel,$container,'php','-d','display_errors=0','-r','echo json_encode(["write"=>@file_put_contents("/package/probe","x"),"socket"=>file_exists("/var/run/docker.sock"),"host_source"=>file_exists(getenv("HOST_SENTINEL_PATH")),"egress"=>@fsockopen("1.1.1.1",443,$errno,$errstr,1)!==false]);']);
     $isolated=json_decode($isolation,true,32,JSON_THROW_ON_ERROR);check($isolated===['write'=>false,'socket'=>false,'host_source'=>false,'egress'=>false],'real_isolation');
-}finally{if(isset($deployment['_container'])){Process::run(['docker','rm','-f',$deployment['_container']],30);}}
+    $contracts=Process::run(['docker','exec',$container,'php','-d','display_errors=0','-r','require "/opt/kit/bootstrap.php"; \UniScript\Integration\HostContract::assertProjection("fulfillments.read",["fulfillments"=>[]]);echo count(\UniScript\Integration\HostContract::timezones())>400 && class_exists(\UniScript\Integration\HostRequirements::class)?"ready":"missing";']);
+    check($contracts==='ready','runtime_shares_complete_public_contracts');
+}finally{if(isset($deployment['_container'])){Process::run(['docker','rm','-f',$deployment['_container']],30);}unlink($hostSentinel);}
 // A success-shaped lifecycle must never certify always-rejecting/temporary stubs.
 foreach(['validation_rejection','temporary_failure'] as $kind){
     $fixture=$state.'/stub-'.$kind;

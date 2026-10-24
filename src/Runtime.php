@@ -32,9 +32,6 @@ final class Runtime
         if (!$result instanceof Result) {
             return new Result('permanent_failure', 'handler.invalid_result');
         }
-        if ($result->kind === 'partial') {
-            return new Result('permanent_failure', 'partial.not_certified');
-        }
         try{$schemas->validate($result->jsonSerialize(),$operation['output_schema']);}catch(\InvalidArgumentException){return new Result('permanent_failure','schema.output_invalid');}
         return $result;
     }

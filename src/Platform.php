@@ -92,11 +92,20 @@ final class Platform
         if(!preg_match('/\Asha256:[a-f0-9]{64}\z/D',$baseId)){throw new RuntimeException('base_image_not_content_addressed');}
         mkdir($job.'/src');mkdir($job.'/bin');
         // Only the SDK and runtime supervisor enter the image, never platform keys or controller source.
-        $runtimeFiles=['PayloadLimits.php','Invocation.php','Result.php','Services.php','ScopedServices.php','Runtime.php','Manifest.php','SchemaValidator.php','JsonValue.php','JsonDocument.php','ConfigurationSchema.php','ResourceSchema.php','StaticUi.php'];
+        $runtimeFiles=['HostRequirements.php','HostContract.php','PayloadLimits.php','Invocation.php','Result.php','Services.php','ScopedServices.php','Runtime.php','Manifest.php','SchemaValidator.php','JsonValue.php','JsonDocument.php','ConfigurationSchema.php','ResourceSchema.php','StaticUi.php'];
         foreach($runtimeFiles as $file){copy($root.'/src/'.$file,$job.'/src/'.$file);}
+        foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root.'/contracts',\FilesystemIterator::SKIP_DOTS)) as $contract){
+            if($contract->isLink()||!$contract->isFile()||$contract->getExtension()!=='json'||$contract->getSize()>1048576){throw new RuntimeException('public_contract_source_invalid');}
+            $relative=substr($contract->getPathname(),strlen($root.'/contracts/'));
+            foreach([$job.'/contracts/',$job.'/src/contracts/'] as $target){
+                if(!is_dir(dirname($target.$relative))){mkdir(dirname($target.$relative),0755,true);}
+                if(!copy($contract->getPathname(),$target.$relative)){throw new RuntimeException('public_contract_copy_failed');}
+                chmod($target.$relative,0644);
+            }
+        }
         foreach(['invoke.php','runtime-server.php'] as $file){copy($root.'/bin/'.$file,$job.'/bin/'.$file);}
         copy($root.'/bootstrap.php',$job.'/bootstrap.php');copy($root.'/docker/Dockerfile',$job.'/Dockerfile');
-        file_put_contents($job.'/.dockerignore',"*\n!Dockerfile\n!bootstrap.php\n!src/**\n!bin/**\n!package/**\n");
+        file_put_contents($job.'/.dockerignore',"*\n!Dockerfile\n!bootstrap.php\n!src/**\n!contracts/**\n!bin/**\n!package/**\n");
         Process::run(['docker','build','--network','none','--build-arg','BASE_IMAGE='.$baseReference,'--label','org.uniscript.source='.$record['source_sha256'],'--label','org.uniscript.execution='.$record['execution_uuid'],'--iidfile',$job.'/image.id',$job],180);
         $image=trim(file_get_contents($job.'/image.id'));
         if(!preg_match('/\Asha256:[a-f0-9]{64}\z/D',$image)){throw new RuntimeException('invalid_image_identity');}

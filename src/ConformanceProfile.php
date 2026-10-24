@@ -11,6 +11,10 @@ final class ConformanceProfile
 {
     public static function scenarios(string $operation,string $packageId='',int $manifestVersion=1,string $packageVersion=''): array
     {
+        if ($packageId === 'uniscript/reference-pos') {
+            $fixtures = JsonDocument::decode(file_get_contents(dirname(__DIR__).'/fixtures/reference-conformance.json'), true);
+            return $fixtures[$operation] ?? throw new RuntimeException('trusted_scenario_not_available:'.$operation);
+        }
         if ($packageId === 'uniscript/lifefile-v2') {
             $fixtures = JsonDocument::decode(file_get_contents(dirname(__DIR__).'/tests/fixtures/lifefile-api-v2-conformance.json'), true);
             return $fixtures[$operation] ?? throw new RuntimeException('trusted_scenario_not_available:'.$operation);
@@ -57,7 +61,7 @@ final class ConformanceProfile
 
     public static function readinessOperation(string $packageId): string
     {
-        return $packageId === 'uniscript/lifefile-v2' ? 'identity.describe' : 'health.probe';
+        return in_array($packageId, ['uniscript/lifefile-v2', 'uniscript/reference-pos'], true) ? 'identity.describe' : 'health.probe';
     }
 
     public static function serviceResponse(string $packageId,array $scenario,array $request,SyntheticHost $host):array
@@ -108,7 +112,7 @@ final class ConformanceProfile
         if($result->kind==='validation_rejection'){return;}
         if (isset($scenario['expected_proposals']) && ($result->data['proposals'] ?? null) !== $scenario['expected_proposals']) { throw new RuntimeException('conformance_catalog_projection'); }
         if($operation==='identity.describe'&&($result->data['package_id']??null)!==$packageId){throw new RuntimeException('conformance_identity');}
-        if(in_array($operation,['orders.submit','orders.reconcile','orders.status.update','orders.shipping.update'],true)&&(!is_string($result->data['external_reference_handle']??null)||$result->data['external_reference_handle']==='')){throw new RuntimeException('conformance_acceptance_reference');}
+        if($result->kind==='remote_acceptance'&&in_array($operation,['orders.submit','orders.reconcile','orders.status.update','orders.shipping.update'],true)&&(!is_string($result->data['external_reference_handle']??null)||$result->data['external_reference_handle']==='')){throw new RuntimeException('conformance_acceptance_reference');}
         if(in_array($operation,['catalog.preview','inbound.decode'],true)&&($result->data['applied']??null)!==false){throw new RuntimeException('conformance_no_core_mutation');}
         if($operation==='reference.refresh'&&$packageId!=='uniscript/lifefile-v2'&&($result->data['revision']??null)!==1){throw new RuntimeException('conformance_resource_revision');}
     }

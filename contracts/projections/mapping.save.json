@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "revision",
+    "status",
+    "host_reload_required"
+  ],
+  "properties": {
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "host_reload_required": {
+      "const": true
+    }
+  },
+  "additionalProperties": false
+}
