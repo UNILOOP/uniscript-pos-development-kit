@@ -22,8 +22,12 @@
     "default_drug_name": "Synthetic saline",
     "schedule_code": "O"
   },
+  "catalog": [
+    {"lf_product_id": "1001", "drug_name": "Synthetic saline", "schedule_code": "O"}
+  ],
   "profiles": {
     "lifefile-v2.api": {
+      "host_result_contract": "vendor_json",
       "operations": [
         "identity.describe",
         "configuration.validate",
@@ -225,5 +229,29 @@
         "payor_type": "pat"
       }
     }
+  },
+  "action_mappings": {
+    "status": {
+      "canonical_code": "received",
+      "vendor_code": "R"
+    },
+    "shipping": {
+      "canonical_code": "ground",
+      "vendor_code": "12",
+      "shipping": {}
+    }
+  },
+  "inbound_profile": {
+    "version": 1,
+    "authentication": "basic",
+    "label": "LifeFile v2 offline compatibility fixture",
+    "reference_field": "orderId",
+    "event_id_field": "eventId",
+    "account_fields": {
+      "practiceId": "practice_id"
+    },
+    "package_ids": [
+      "uniscript/lifefile-v2"
+    ]
   }
 }

@@ -1,0 +1,35 @@
+name: Public kit conformance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  standalone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Check the shared UI bridge
+        run: node --test tests/*.test.mjs
+      - name: Verify Docker-only setup
+        run: ./dev-kit doctor
+      - name: Run generic conformance and real isolated runtime workflows
+        run: ./dev-kit test --docker
+      - name: Scaffold and export a custom publisher package
+        run: |
+          ./dev-kit new acme/ci-pos ci-pos
+          ./dev-kit package ci-pos ci-pos-1.0.0.zip
+      - name: Retain the source validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: reference-submission
+          path: dist/

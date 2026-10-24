@@ -8,6 +8,8 @@ The environment separates three responsibilities:
 
 The workbench and control plane are trusted tools with Docker access, which is powerful host access. Bind them to loopback and review modifications. Package containers never receive this access.
 
+The trusted base-image step installs the published PHP extension set from the official PHP image and Alpine repositories before any package source is copied. Its small build context contains only the SDK's base Dockerfile. Subsequent package builds use `--network none`, record the exact base/image digests and independently verify base-layer ancestry during certification. First setup may need public image/package downloads; cached bases are reused. A custom `PACKAGE_BASE_IMAGE` must be explicitly provided by the operator, have an immutable repository digest, and satisfy the same PHP 8.4/extension profile.
+
 ## Flows
 
 `Workspace → deterministic ZIP → inspection → immutable build → isolated invocation → scoped services → result`

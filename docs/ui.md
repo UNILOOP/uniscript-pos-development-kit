@@ -11,6 +11,10 @@ Declare `ui.profile: static-v1`, one static entrypoint and supported surfaces in
 
 Legacy diagnostics has `context.read` and `diagnostics.refresh`. The shared contract registry is authoritative. Unsupported operation names fail.
 
+A legacy declaration without `ui.surfaces` does not provide a setup, mapping or order screen. The workbench identifies it explicitly and uses the host's schema controls and order details. Empty schemas display a no-fields message. Declare each modern surface you implement to preview its custom screen.
+
+Static assets must be below `ui/`, with HTML, JavaScript or CSS suffixes and a total path of at most 240 ASCII bytes. Each path segment starts with a letter or digit; letters, digits, underscores and hyphens are accepted, with dots separating nonempty parts. Framework bundles such as `ui/assets/screen.abc123.js` and `ui/assets/theme.123abc.css` are supported. Hidden files, double dots, trailing dots, encoded paths, query strings, fragments and filename case collisions are rejected. The exported `ui.asset_path_pattern` and `ui.asset_path_max_bytes` define the same grammar for the host, SDK and asset servers. Assets must also belong to the exact immutable UI digest; a valid-looking name alone never makes a file public.
+
 ## Queries
 
 - `context.read`: package/version/execution, environment, safe connection status/freshness, current surface/resource IDs, `sensitive_operations_available: false`.

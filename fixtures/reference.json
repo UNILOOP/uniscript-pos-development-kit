@@ -98,16 +98,40 @@
       "mode": "reconcile"
     },
     "synthetic.status": {
+      "body_invocation_projection": {"status": {"source": "status"}},
       "operations": [
         "orders.status.update"
       ],
       "mode": "action"
     },
     "synthetic.shipping": {
+      "body_invocation_projection": {"shipping": {"source": "shipping"}},
       "operations": [
         "orders.shipping.update"
       ],
       "mode": "action"
     }
+  },
+  "action_mappings": {
+    "status": {
+      "canonical_code": "received",
+      "vendor_code": "in_progress"
+    },
+    "shipping": {
+      "canonical_code": "ground",
+      "vendor_code": "GROUND-STD",
+      "shipping": {}
+    }
+  },
+  "inbound_profile": {
+    "version": 1,
+    "authentication": "basic",
+    "label": "Vendor-neutral reference fixture",
+    "reference_field": "orderId",
+    "event_id_field": "eventId",
+    "account_fields": {},
+    "package_ids": [
+      "uniscript/reference-pos"
+    ]
   }
 }

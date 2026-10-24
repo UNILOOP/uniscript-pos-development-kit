@@ -3,6 +3,9 @@
 !composer.json
 !README.md
 !LICENSE
+!CONTRIBUTING.md
+!SECURITY.md
+!dev-kit
 !contracts/**
 !fixtures/**
 !docs/**

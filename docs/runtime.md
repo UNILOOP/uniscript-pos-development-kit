@@ -38,8 +38,10 @@ Use `Services::request($service, $action, $arguments)`:
 | `storage.read` | Read allowed scoped key |
 | `storage.write` | Bounded JSON write with expected revision; stale writes fail |
 | `resources.read` | Authorized typed resource/opaque handle from current invocation |
-| `commands.propose` | Typed catalog/inbound proposals for host validation |
+| `commands.propose` | A `normalized_event` proposal bound to the authenticated inbound receipt; the host validates and applies it |
 | `http.request` | Registered profile plus allowed operation, bounded parameters/body; host owns auth and egress |
+
+`catalog.preview` returns typed proposals in its operation result; it does not submit a catalog command through `commands.propose`.
 
 Use runnable examples and contract tests for exact argument/results. Arbitrary URLs, scope IDs, raw credentials and authorization headers are not accepted. A local fixture response does not register a production endpoint.
 

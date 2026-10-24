@@ -10,33 +10,61 @@ final class StaticUi
 {
     public static function inspect(string $root, array $manifest): array
     {
-        if (!array_key_exists('ui', $manifest)) { return ['sha256' => hash('sha256',''), 'files' => []]; }
-        $ui=$manifest['ui'];
-        if (($manifest['manifest_version']??null)!==2 || !is_array($ui) || array_diff(array_keys($ui),['profile','entrypoint','surfaces'])!==[] || ($ui['profile']??null)!=='static-v1' || !is_string($ui['entrypoint']??null) || !str_ends_with($ui['entrypoint'],'.html')) { throw new InvalidArgumentException('ui_contract'); }
+        if (! array_key_exists('ui', $manifest)) {
+            return ['sha256' => hash('sha256', ''), 'files' => []];
+        }
+        $ui = $manifest['ui'];
+        if (($manifest['manifest_version'] ?? null) !== 2 || ! is_array($ui) || array_diff(array_keys($ui), ['profile', 'entrypoint', 'surfaces']) !== [] || ($ui['profile'] ?? null) !== 'static-v1' || ! is_string($ui['entrypoint'] ?? null) || ! str_ends_with($ui['entrypoint'], '.html')) {
+            throw new InvalidArgumentException('ui_contract');
+        }
         if (array_key_exists('surfaces', $ui)) {
             $surfaces = $ui['surfaces'];
             $allowed = ['connection.setup', 'catalog.item.mapping', 'pharmacy.order.details', 'sender.order.details'];
-            if (!is_array($surfaces) || !array_is_list($surfaces) || count($surfaces) < 1 || count($surfaces) > 4) { throw new InvalidArgumentException('ui_surfaces'); }
+            if (! is_array($surfaces) || ! array_is_list($surfaces) || count($surfaces) < 1 || count($surfaces) > 4) {
+                throw new InvalidArgumentException('ui_surfaces');
+            }
             $seen = [];
             foreach ($surfaces as $surface) {
-                if (!is_string($surface) || !in_array($surface, $allowed, true) || in_array($surface, $seen, true)) { throw new InvalidArgumentException('ui_surfaces'); }
+                if (! is_string($surface) || ! in_array($surface, $allowed, true) || in_array($surface, $seen, true)) {
+                    throw new InvalidArgumentException('ui_surfaces');
+                }
                 $seen[] = $surface;
             }
         }
-        self::path($ui['entrypoint']);
-        $base=realpath($root.'/ui');if($base===false||is_link($root.'/ui')||!is_file($root.'/'.$ui['entrypoint'])){throw new InvalidArgumentException('ui_entrypoint');}
-        $files=[];$bytes=0;
-        foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base,\FilesystemIterator::SKIP_DOTS)) as $file){
-            $relative=substr($file->getPathname(),strlen($base)+1);self::path('ui/'.$relative);
-            if(!$file->isFile()||$file->isLink()||($bytes+=$file->getSize())>2097152||count($files)>=100){throw new InvalidArgumentException('ui_bounds');}
-            $files[$relative]=hash_file('sha256',$file->getPathname());
+        self::assertPath($ui['entrypoint']);
+        $base = realpath($root.'/ui');
+        if ($base === false || is_link($root.'/ui') || ! is_file($root.'/'.$ui['entrypoint'])) {
+            throw new InvalidArgumentException('ui_entrypoint');
         }
-        if($files===[]){throw new InvalidArgumentException('ui_empty');}ksort($files,SORT_STRING);
-        return ['sha256'=>hash('sha256',json_encode($files,JSON_THROW_ON_ERROR)),'files'=>$files];
+        $files = [];
+        $bytes = 0;
+        foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS)) as $file) {
+            $relative = substr($file->getPathname(), strlen($base) + 1);
+            self::assertPath('ui/'.$relative);
+            if (! $file->isFile() || $file->isLink() || ($bytes += $file->getSize()) > 2097152 || count($files) >= 100) {
+                throw new InvalidArgumentException('ui_bounds');
+            }
+            $files[$relative] = hash_file('sha256', $file->getPathname());
+        }
+        if ($files === []) {
+            throw new InvalidArgumentException('ui_empty');
+        }ksort($files, SORT_STRING);
+
+        return ['sha256' => hash('sha256', json_encode($files, JSON_THROW_ON_ERROR)), 'files' => $files];
     }
 
-    private static function path(string $path): void
+    public static function isPath(string $path): bool
     {
-        if(!preg_match('/\Aui\/(?:[A-Za-z0-9][A-Za-z0-9_-]*\/)*[A-Za-z0-9][A-Za-z0-9_-]*\.(?:html|js|css)\z/D',$path)){throw new InvalidArgumentException('ui_path');}
+        static $contract;
+        $contract ??= HostContract::read()['ui'];
+
+        return strlen($path) <= $contract['asset_path_max_bytes'] && preg_match('~\A'.$contract['asset_path_pattern'].'\z~D', $path) === 1;
+    }
+
+    public static function assertPath(string $path): void
+    {
+        if (! self::isPath($path)) {
+            throw new InvalidArgumentException('ui_path');
+        }
     }
 }

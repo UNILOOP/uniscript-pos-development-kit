@@ -1,9 +1,9 @@
 FROM docker:29-cli AS docker_cli
 FROM php:8.4-cli-alpine
-RUN apk add --no-cache libzip-dev && docker-php-ext-install zip
+RUN apk add --no-cache libzip-dev icu-dev && docker-php-ext-install -j2 zip bcmath intl
 COPY --from=docker_cli /usr/local/bin/docker /usr/local/bin/docker
 WORKDIR /opt/kit
-COPY bootstrap.php composer.json README.md LICENSE /opt/kit/
+COPY bootstrap.php composer.json README.md LICENSE CONTRIBUTING.md SECURITY.md dev-kit /opt/kit/
 COPY src /opt/kit/src
 COPY bin /opt/kit/bin
 COPY docker /opt/kit/docker

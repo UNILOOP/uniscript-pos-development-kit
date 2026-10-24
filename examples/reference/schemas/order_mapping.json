@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "product_code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "title": "Vendor product code"
+    },
+    "schedule_code": {
+      "type": "string",
+      "enum": [
+        "O",
+        "L",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "title": "Schedule"
+    }
+  },
+  "required": [
+    "product_code",
+    "schedule_code"
+  ],
+  "additionalProperties": false
+}

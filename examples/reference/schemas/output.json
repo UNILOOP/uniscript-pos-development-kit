@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "required": [
+    "protocol_version",
+    "kind",
+    "reason_code",
+    "data",
+    "field_errors",
+    "recovery"
+  ]
+}

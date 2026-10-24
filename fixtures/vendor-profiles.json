@@ -26,12 +26,14 @@
     "mode": "reconcile"
   },
   "synthetic.status": {
+    "body_invocation_projection": {"status": {"source": "status"}},
     "operations": [
       "orders.status.update"
     ],
     "mode": "action"
   },
   "synthetic.shipping": {
+    "body_invocation_projection": {"shipping": {"source": "shipping"}},
     "operations": [
       "orders.shipping.update"
     ],

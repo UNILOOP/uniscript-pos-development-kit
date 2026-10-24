@@ -76,7 +76,7 @@ The outer document is:
         "required": ["order_id", "account_id"],
         "additionalProperties": false
       },
-      "body_account_bindings": {"body.account_id": "account_id"},
+      "body_account_bindings": {"account_id": "account_id"},
       "success_path": "status",
       "success_value": "accepted",
       "reference_path": "id"
@@ -108,9 +108,9 @@ The adapter intentionally does not accept executable auth plugins, arbitrary req
 
 - HTTPS with certificate verification is required. DNS must resolve entirely to public addresses; loopback, private/link-local/reserved space, metadata destinations, mixed public/private answers and unsupported literal destinations are rejected.
 - The resolved address is pinned for the request using [libcurl's `CURLOPT_RESOLVE`](https://curl.se/libcurl/c/CURLOPT_RESOLVE.html); the connected peer is checked. Protocols are restricted, proxies are disabled, redirects are not followed, and no cookie jar is used.
-- HTTP work is bounded by the original invocation deadline, a maximum 5-second connection timeout, a maximum 30-second total request, 16 KiB response headers and at most 256 KiB response body. OAuth responses are limited to 16 KiB. Request bodies are limited to 128 KiB.
+- HTTP work is bounded by the original invocation deadline, a maximum 3-second connection timeout, a maximum 10-second vendor request, 16 KiB response headers and at most 256 KiB response body. OAuth requests have a maximum 5-second timeout and 16 KiB response limit. Arguments default to 128 KiB; larger payloads require the exact governed package payload profile. The ordinary invocation deadline is 20 seconds.
 - Mutations are claimed durably before sending. A concurrent or repeated logical mutation cannot dispatch another request. The same key with a different immutable request/account/profile/credential revision is rejected.
-- A lost, invalid or uncertain server response remains an unknown outcome. No automatic retry is performed. Use a reviewed reconciliation operation or operator review. Known authentication failure before the vendor mutation is rejected without pretending acceptance.
+- Any unverified claimed managed operation remains an unknown outcome, including authentication errors and vendor rejection responses. No automatic retry is performed. Use a reviewed reconciliation operation or operator review. Read-only identity profiles reject unusable responses without pretending acceptance.
 - Cached responses and raw accepted references are encrypted in private local state. Package code receives an opaque reference handle; only trusted host evidence carries the raw reference.
 
 For local HTTP tests only, the constructor has a separate loopback test gate requiring CLI execution, `APP_ENV=testing`, `POS_KIT_TRANSPORT_LOOPBACK_TEST=1` and an explicit trusted constructor option. The environment factory and workbench never enable that option. Setting `allow_local_synthetic` in a profile cannot bypass live HTTPS/public-address rules.

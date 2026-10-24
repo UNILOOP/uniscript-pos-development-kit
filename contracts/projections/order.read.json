@@ -18,7 +18,23 @@
     "status": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 240
+      "maxLength": 240,
+      "enum": [
+        "received",
+        "validation_failed",
+        "validated",
+        "routing_failed",
+        "queued_for_pos",
+        "submitted_to_pos",
+        "accepted",
+        "rejected",
+        "in_progress",
+        "ready",
+        "completed",
+        "cancellation_requested",
+        "cancelled",
+        "failed"
+      ]
     },
     "route_version": {
       "type": "integer",
@@ -27,7 +43,15 @@
     "delivery_status": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 240
+      "maxLength": 240,
+      "enum": [
+        "queued",
+        "dispatched",
+        "succeeded",
+        "rejected",
+        "failed",
+        "unknown"
+      ]
     },
     "pos_order_references": {
       "type": "array",

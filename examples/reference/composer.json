@@ -1,0 +1,8 @@
+{
+  "name": "uniscript/reference-pos",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": "^8.4"
+  }
+}

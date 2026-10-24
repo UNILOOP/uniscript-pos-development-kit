@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "account_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "title": "Vendor account ID",
+      "description": "Synthetic account identifier for local development."
+    },
+    "timezone_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "title": "Time zone"
+    },
+    "display_label": {
+      "type": "string",
+      "maxLength": 120,
+      "title": "Connection label"
+    }
+  },
+  "required": [
+    "account_id",
+    "timezone_name"
+  ],
+  "additionalProperties": false
+}

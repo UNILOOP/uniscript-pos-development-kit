@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>UniScript · POS developer workbench</title>
+    <link rel="stylesheet" href="/workbench.css">
+    <script type="module" src="/workbench.js"></script>
+</head>
+<body>
+    <a class="skip" href="#main">Skip to content</a>
+    <div class="shell">
+        <aside class="sidebar">
+            <a class="brand" href="#packages"><span class="brand-mark">U</span><span>UniScript<small>Developer workbench</small></span></a>
+            <nav aria-label="Workbench">
+                <a href="#packages" data-page="packages">Packages</a>
+                <a href="#connections" data-page="connections">POS connections</a>
+                <a href="#catalog" data-page="catalog">Product mapping</a>
+                <a href="#orders" data-page="orders">Orders &amp; fulfillment</a>
+                <a href="#diagnostics" data-page="diagnostics">Activity &amp; diagnostics</a>
+                <a href="#guide" data-page="guide">Developer guide</a>
+            </nav>
+            <div class="sidebar-footer"><span class="status-dot"></span> Local sandbox<button id="theme" class="subtle" type="button">Switch theme</button></div>
+        </aside>
+        <div class="workspace">
+            <header class="topbar"><span class="environment">LOCAL SANDBOX</span><span>Synthetic pharmacy · Synthetic sender</span><button id="refresh" type="button" class="secondary small">Refresh</button></header>
+            <div class="notice">Build and test any compatible POS integration. Package code runs in isolated containers. This local host simulates workflows; it does not process payments or contact production vendors.</div>
+            <div id="message" role="status" aria-live="polite"></div>
+            <main id="main" tabindex="-1"><div class="loading">Loading your workbench…</div></main>
+        </div>
+    </div>
+</body>
+</html>

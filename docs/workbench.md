@@ -10,7 +10,7 @@ Start with `./dev-kit up`, then open the loopback URL printed by that command. U
 2. Create a POS connection. Its form is generated from the package's configuration and credential schemas. Credentials are entered in host controls, encrypted in private state and omitted from all embedded views.
 3. Run a health check and a connection test, then activate. The workbench invokes actual `health.probe`, `connection.test` and `configuration.validate` package handlers. It does not turn on an application scheduler or a general queue.
 4. Open **Product mapping**. The active connection's custom view and schema fallback write the same optimistic mapping revision. Status and shipping resource fixture editors are explicitly local test data for `resources.read`; they do not invent new host bridge actions.
-5. Optionally create a sender credential override, test it, then enable it. An order records the selected immutable credential revision. Editing or disabling an override does not change existing orders.
+5. Optionally create a sender credential override, test it, then enable it. An order records the selected immutable credential revision. Editing or disabling an override does not change existing orders. A draft, disabled or revoked override blocks new orders for that sender; explicitly remove it to use connection credentials. Revoking an old revision also blocks outbound actions for orders pinned to it, while incoming callbacks can still update those orders.
 6. Submit a synthetic order with an idempotency key. The host supplies the authoritative order UUID and published product mapping, invokes validation, then submission. Acceptance requires trusted broker evidence, not a package's assertion alone.
 7. Create an incoming webhook URL with independent local Basic credentials. On the pharmacy order view, send **Shipped**, then **Delivered**, and replay either. These actions authenticate against the same receipt path, run the actual `inbound.decode` handler and apply the resulting scoped proposals. The sender view is read only.
 8. Load a second compatible version and draft an upgrade. Confirm credential copying, run fresh checks and activate. Configuration, mappings and local resource fixtures remain; health/test evidence and enabled override status require fresh verification. The webhook URL stays stable. Old orders retain their original execution and views.
@@ -36,7 +36,7 @@ Trusted offline fixture files under `fixtures/*.json` use this structure:
 }
 ```
 
-Fixture defaults are selected by package identity, and profile maps are merged only when their names do not conflict. `callback_account_fields` binds an inbound field to the original order configuration. Neither a fixture nor a manifest grants real network access. All fixture credentials are intentionally synthetic and publicly shareable. Keep live sandbox credentials out of these files.
+Fixture defaults are selected by package identity, and profile maps are merged only when their names do not conflict. `inbound_profile` describes reviewed reference/event/account field paths and is pinned to the created endpoint; see [Webhooks and upgrades](webhooks-and-upgrades.md). The older `callback_account_fields` map remains an offline compatibility fallback with `orderId` and `eventId` wire fields. Neither a fixture nor a manifest grants real network access. All fixture credentials are intentionally synthetic and publicly shareable. Keep live sandbox credentials out of these files.
 
 For your own integration, place a companion JSON fixture in `dev-fixtures/` rather than changing kit source. Compose mounts that directory read only as `KIT_FIXTURES`; a directly started server accepts the same environment variable. A file must declare the package identity and contain data only. Reload the workbench after editing it. An external fixture with the same package identity replaces that package's built-in fixture; conflicting profile names across different fixtures are rejected. No PHP fixture code is loaded, and even a profile containing URL-looking text cannot make the offline adapter perform network I/O. The fixture is separate from the deliverable ZIP and provides no production host authorization.
 
@@ -69,7 +69,7 @@ Unless stated otherwise, arguments require `connection_id`. Optional `organizati
 | `connection.save` | `expected_version`, `config`, optional replacement `credentials` | New configuration/credential revision; historical values retained; invalidates health, test and UI sessions |
 | `connection.health` | None | Actual `health.probe` result summary and evidence pinned to current revisions |
 | `connection.test` | None | Actual `connection.test` result summary and pinned evidence |
-| `connection.activate` | None | Requires fresh successful health/test and configuration validation; pauses the previously active location connection |
+| `connection.activate` | None | Requires fresh successful health/test and configuration validation; pauses the replaced connection in the same upgrade lineage |
 | `connection.pause` | None | Pauses routing and invalidates open screens |
 | `connection.revoke` | None | Revokes future host actions and open screens |
 | `connection.upgrade` | Target `execution_revision`, `copy_credentials:true` | New draft of same package identity; validates retained schemas and preserves webhook lineage; old connection stays active until replacement activation |
@@ -80,13 +80,18 @@ Unless stated otherwise, arguments require `connection_id`. Optional `organizati
 | `override.save` | `sender_id`, object `credentials` | New disabled immutable sender credential revision |
 | `override.test` | `sender_id` | Actual connection test using that sender credential revision |
 | `override.enable` | `sender_id` | Requires successful test of exactly the current sender revision |
-| `override.disable` | `sender_id` | Future orders fall back to connection credentials |
-| `override.revoke` | `sender_id` | Prevents future use of that override; original orders keep their pins |
+| `override.disable` | `sender_id` | Blocks new orders for that sender without changing old credential pins |
+| `override.remove` | `sender_id` | Explicitly selects connection credentials for new orders; historical revocation remains enforced |
+| `override.revoke` | `sender_id`, optional historical `revision` | Blocks the selected revision, including outbound actions on old orders; authenticated incoming callbacks remain independent |
 | `webhook.create` | `username`, `password` at least 24 characters | Stable endpoint UUID/path for the connection lineage; repeated creation returns the same URL |
 | `order.submit` | `sender_id`, `catalog_item_id`, `idempotency_key`, object `input` | Requires active connection, fresh evidence and published mapping; validates and runs the real package; pins configuration, mapping, credential and execution |
-| `order.action` | `order_id`, `operation`, object `input`; `audience:"pharmacy"` | Original execution for `orders.reconcile`, `orders.status.update` or `orders.shipping.update`; sender mutations denied; reconcile requires broker acceptance evidence |
+| `order.action` | `order_id`, `operation`, integer `expected_revision`, UUID `idempotency_key`; optional `canonical_code`, object `shipping`; `audience:"pharmacy"` | Original execution and credential pins; canonical choices resolve published vendor mappings. Host injects the owned reference and mapped shipping service. No caller-supplied vendor input. Replays return one immutable receipt; unknown mutations require review; sender mutations denied |
 
 The **Activity & diagnostics** operation console exposes declared package functions with explicit synthetic JSON. Order creation and decoding use dedicated workflows to preserve their scope and evidence.
+
+A status or shipping action uses a typed resource fixture with the canonical choice as its key and `{"vendor_code":"..."}` as its values. For example, a `shipping_mapping` named `ground` may map to `GROUND-STD` for a generic string service schema, or `12` for an integer service schema. The host translates and validates the declared type, injects `shipping.service` and an opaque reference belonging to the original order, and never accepts those fields from the caller. Successful vendor actions do not directly change the canonical order lifecycle; inbound proposals remain authoritative. Orders expose only safe action receipts and a current `action_revision`.
+
+Live sandbox checks require an independent host-controlled identity verification request with authenticated principal and account bindings. Uploaded package success alone cannot activate a live connection or enable sender credentials. Proofs bind the reviewed transport policy before and after each test; changing that policy makes prior evidence stale. Offline health and sender tests remain clearly marked synthetic.
 
 ## Embedded views
 

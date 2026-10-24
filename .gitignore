@@ -1,5 +1,6 @@
 /var/
 /.env
+/.env.*
 /dist/
 *.zip
 .DS_Store

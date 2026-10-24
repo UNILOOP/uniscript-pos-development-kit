@@ -1,0 +1,138 @@
+{
+    "manifest_version": 2,
+    "package_id": "uniscript/reference-pos",
+    "publisher": "uniscript",
+    "integration_key": "reference-pos",
+    "display_name": "Reference POS",
+    "vendor_family": "reference",
+    "version": "1.0.0",
+    "sdk_version": "^1.0",
+    "protocol_version": "1",
+    "runtime": {
+        "entrypoint": "src/runtime.php",
+        "php": "^8.4",
+        "extensions": [],
+        "profile": "standard"
+    },
+    "operations": [
+        {
+            "key": "identity.describe",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "configuration.validate",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "health.probe",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "connection.test",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "orders.validate",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "orders.submit",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "orders.reconcile",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "orders.status.update",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "orders.shipping.update",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "catalog.preview",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "reference.refresh",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "inbound.decode",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        },
+        {
+            "key": "reference.inspect",
+            "handler": "Reference\\Handler::run",
+            "input_schema": "schemas/input.json",
+            "output_schema": "schemas/output.json",
+            "required_capabilities": []
+        }
+    ],
+    "capabilities": {
+        "required": [],
+        "optional": []
+    },
+    "support": {
+        "email": "integrations@example.invalid",
+        "documentation": "https://example.invalid/reference-pos"
+    },
+    "configuration_schema": "schemas/configuration.json",
+    "credential_schema": "schemas/credential-fields.json",
+    "resource_schemas": {
+        "order_mapping": "schemas/order_mapping.json",
+        "reference": "schemas/reference.json",
+        "status_mapping": "schemas/status_mapping.json",
+        "shipping_mapping": "schemas/shipping_mapping.json",
+        "order_status_update": "schemas/order_status_update.json",
+        "order_shipping_update": "schemas/order_shipping_update.json"
+    },
+    "ui": {
+        "profile": "static-v1",
+        "entrypoint": "ui/index.html",
+        "surfaces": [
+            "connection.setup",
+            "catalog.item.mapping",
+            "pharmacy.order.details",
+            "sender.order.details"
+        ]
+    }
+}

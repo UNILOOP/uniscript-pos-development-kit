@@ -1,0 +1,49 @@
+#!/bin/sh
+set -eu
+cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+command_name=${1:-help}
+if [ "$#" -gt 0 ]; then shift; fi
+compose() { docker compose -f compose.dev.yaml "$@"; }
+workspace_path() {
+  case "$1" in ''|/*|*\\*) printf 'Use a relative package directory inside the configured workspace.\n' >&2; exit 1 ;; esac
+  case "/$1/" in */../*|*/./*|*/.git/*) printf 'Workspace paths cannot traverse parent or Git directories.\n' >&2; exit 1 ;; esac
+}
+case "$command_name" in
+  doctor)
+    docker version --format 'Docker client {{.Client.Version}}, server {{.Server.Version}}'
+    docker compose version
+    compose config --quiet
+    ;;
+  up)
+    mkdir -p workspace dist dev-fixtures sandbox-profiles
+    compose --profile workbench up -d --build workbench
+    printf 'Local package workbench: http://127.0.0.1:%s\n' "${POS_KIT_PORT:-19100}"
+    ;;
+  down) compose --profile workbench stop workbench ;;
+  status) compose --profile workbench ps ;;
+  logs) compose logs --tail 100 "${1:-workbench}" ;;
+  new)
+    if [ "$#" -lt 2 ]; then printf 'Usage: ./dev-kit new publisher/package DIRECTORY [reference|starter|custom-ui]\n' >&2; exit 1; fi
+    workspace_path "$2"
+    mkdir -p workspace dist dev-fixtures sandbox-profiles
+    compose run --build --rm --no-deps --user "$(id -u):$(id -g)" toolbox php bin/dev-kit.php new "$1" "/workspace/$2" "${3:-reference}" "/developer-fixtures/$(basename -- "$2").json"
+    ;;
+  package)
+    if [ "$#" -lt 2 ]; then printf 'Usage: ./dev-kit package DIRECTORY OUTPUT.zip\n' >&2; exit 1; fi
+    workspace_path "$1"
+    case "$2" in */*|.*|*\\*) printf 'Use a ZIP filename inside dist/, without a directory prefix.\n' >&2; exit 1 ;; *.zip) ;; *) printf 'The output filename must end in .zip.\n' >&2; exit 1 ;; esac
+    mkdir -p workspace dist dev-fixtures sandbox-profiles
+    compose run --build --rm --no-deps --user "$(id -u):$(id -g)" toolbox php bin/dev-kit.php package "/workspace/$1" "/artifacts/$2"
+    ;;
+  test)
+    mkdir -p workspace dist dev-fixtures sandbox-profiles
+    compose run --build --rm --no-deps toolbox php bin/check.php "$@"
+    ;;
+  reset)
+    if [ "${1:-}" != '--confirm-local-data-loss' ]; then printf 'To remove this kit project’s private local state: ./dev-kit reset --confirm-local-data-loss\n' >&2; exit 1; fi
+    compose --profile workbench down --volumes
+    ;;
+  *)
+    printf '%s\n' 'UniScript POS development kit' './dev-kit doctor | up | down | status | logs' './dev-kit new publisher/package DIRECTORY [template]' './dev-kit package DIRECTORY OUTPUT.zip' './dev-kit test [--docker]' './dev-kit reset --confirm-local-data-loss'
+    ;;
+esac

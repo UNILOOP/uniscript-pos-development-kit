@@ -55,6 +55,15 @@
             "permanent_failure",
             "unknown_remote_outcome"
         ],
+        "result_statuses": {
+            "success": "succeeded",
+            "remote_acceptance": "succeeded",
+            "validation_rejection": "rejected",
+            "unsupported_operation": "rejected",
+            "temporary_failure": "failed",
+            "permanent_failure": "failed",
+            "unknown_remote_outcome": "unknown"
+        },
         "composer_profile": "dependency-free-php",
         "managed_profile_version": 1,
         "managed_authentication_schemes": [
@@ -102,7 +111,26 @@
             "real_time_benefit_readiness",
             "rtpb_v13_readiness"
         ],
-        "publisher_ownership_assigned_by_host": true
+        "publisher_ownership_assigned_by_host": true,
+        "mapping_schema_policy": {
+            "version": 1,
+            "resource_keys": [
+                "order_mapping",
+                "status_mapping",
+                "shipping_mapping"
+            ],
+            "reserved_fields": [
+                "approval_status",
+                "version",
+                "reference_handle",
+                "reference_type",
+                "mapping_handle"
+            ],
+            "sensitive_field_pattern": "(?:^|_)(?:password|secret|token|credentials?|api_?key|private_?key|authorization|username|auth)(?:_|$)",
+            "case_insensitive": true,
+            "credential_field_names_forbidden": true,
+            "recursive": true
+        }
     },
     "limits": {
         "archive": {
@@ -139,6 +167,24 @@
     },
     "ui": {
         "profile": "static-v1",
+        "order_statuses": [
+            "received",
+            "validation_failed",
+            "validated",
+            "routing_failed",
+            "queued_for_pos",
+            "submitted_to_pos",
+            "accepted",
+            "rejected",
+            "in_progress",
+            "ready",
+            "completed",
+            "cancellation_requested",
+            "cancelled",
+            "failed"
+        ],
+        "asset_path_pattern": "ui/(?:[A-Za-z0-9][A-Za-z0-9_-]*(?:\\.[A-Za-z0-9][A-Za-z0-9_-]*)*/)*[A-Za-z0-9][A-Za-z0-9_-]*(?:\\.[A-Za-z0-9][A-Za-z0-9_-]*)*\\.(?:html|js|css)",
+        "asset_path_max_bytes": 240,
         "surfaces": {
             "connection.setup": {
                 "queries": [
@@ -258,11 +304,71 @@
             "delivered"
         ]
     },
+    "command_proposals": {
+        "normalized_event": {
+            "argument_fields": [
+                "command",
+                "receipt_handle",
+                "event",
+                "event_id",
+                "status"
+            ],
+            "required_fields": [
+                "command",
+                "receipt_handle"
+            ],
+            "command": "normalized_event",
+            "receipt_handle_max_length": 200,
+            "event_id_max_length": 200,
+            "status_values": [
+                "received"
+            ],
+            "event_string_fields": [
+                "rx_status",
+                "normalized_status",
+                "order_status",
+                "event_id",
+                "external_order_reference",
+                "fill_reference",
+                "occurred_at",
+                "tracking_number",
+                "carrier",
+                "practice_reference",
+                "foreign_order_reference",
+                "reference_id",
+                "rx_number"
+            ],
+            "event_string_max_length": 500,
+            "event_boolean_fields": [
+                "tracking_present",
+                "status_upgraded_by_tracking"
+            ],
+            "boolean_values": [
+                true,
+                false,
+                0,
+                1,
+                "0",
+                "1"
+            ],
+            "optional_empty_strings_skip_validation": true,
+            "maximum_bytes": 32768,
+            "operation": "inbound.decode",
+            "authenticated_receipt_required": true,
+            "proposal_response_fields": [
+                "proposal_handle",
+                "applied",
+                "receipt_verified",
+                "status"
+            ]
+        }
+    },
     "onboarding": {
         "requirements_file": "host-requirements.json",
         "requirements_contract_version": 1,
         "publisher_assignment_required": true,
         "managed_http_profiles_reviewed_by_host": true,
+        "matching_self_service_policy_for_requested_verification": true,
         "inbound_profiles_reviewed_by_host": true,
         "independent_certification_required": true,
         "internal_release_approval_required": true,

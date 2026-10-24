@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "values": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 100
+      },
+      "maxItems": 100
+    }
+  },
+  "required": [
+    "values"
+  ],
+  "additionalProperties": false
+}
