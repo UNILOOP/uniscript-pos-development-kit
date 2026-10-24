@@ -72,6 +72,7 @@ final class Workbench
             return ['simulation' => true, 'mode' => 'Local synthetic host — no payments or production access',
                 'vendor_transport' => method_exists($this->runtime, 'networkMode') ? $this->runtime->networkMode() : ['live_sandbox_enabled' => false, 'selected_package_id' => null],
                 'catalog' => (new WorkbenchCatalog($this->store))->snapshot($state),
+                'reference_timezones' => HostContract::timezones(),
                 'packages' => array_values(array_map($this->packageSummary(...), $state['packages'])),
                 'connections' => array_values(array_map(fn (array $connection): array => $this->connectionSummary($state, $connection), $state['connections'])),
                 'orders' => array_values(array_map(fn (array $order): array => $this->orderSummary($state, $order), $state['orders'])),

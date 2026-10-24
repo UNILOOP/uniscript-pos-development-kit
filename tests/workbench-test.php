@@ -130,6 +130,7 @@ $fixture = json_decode(file_get_contents(dirname(__DIR__).'/fixtures/reference.j
 $host = 'http://127.0.0.1:19100';
 $browser = 'test-browser-a';
 try {
+    workbenchCheck($workbench->snapshot()['reference_timezones'] === HostContract::timezones(), 'Fallback configuration controls receive the exact shared host timezone catalog and labels');
     $package = $workbench->load(dirname(__DIR__).'/examples/reference');
     workbenchCheck($package['manifest']['package_id'] === $fixture['package_id'], 'Reference package identity');
     $connection = $workbench->dispatch('connection.create', ['execution_revision' => $package['execution_revision'], 'config' => $fixture['configuration'], 'credentials' => ['api_key' => 'private-test-api-value']]);

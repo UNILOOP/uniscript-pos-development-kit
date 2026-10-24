@@ -188,8 +188,12 @@ function schemaForm(schema, values = {}, credentials = false) {
             control = inputField(title, JSON.stringify(values[name] ?? (definition.type === 'array' ? [] : {}), null, 2), 'textarea', definition.description);
             control.label.classList.add('wide');
             get = () => JSON.parse(control.input.value);
-        } else if (name === 'timezone_name' && typeof Intl.supportedValuesOf === 'function') {
-            control = selectField(title, [['', 'Choose a time zone'], ['UTC', 'UTC'], ...Intl.supportedValuesOf('timeZone').map((value) => [value, value.replaceAll('_', ' ')])], values[name] ?? '', definition.description);
+        } else if (name === 'timezone_name') {
+            const zones = state?.reference_timezones ?? [];
+            const selected = values[name] ?? '';
+            const options = [['', 'Choose a time zone'], ...zones.map(({ value, label }) => [value, label])];
+            if (selected && !zones.some(({ value }) => value === selected)) options.push([selected, selected]);
+            control = selectField(title, options, selected, definition.description);
             get = () => control.input.value;
         } else {
             const numeric = ['integer', 'number'].includes(definition.type);

@@ -17,6 +17,14 @@ UniScript keeps a safe own snapshot so ordinary builds/tests do not require init
 
 Do not export private host classes, database models, tenant data, secrets or internal deployment configuration. Synthetic DTO fixtures and declarative contracts are the public boundary.
 
+## Opt-in host compatibility CI
+
+UniScript's `.github/workflows/pos-package-conformance.yml` runs only through **Run workflow** (`workflow_dispatch`). Ordinary deployment and application test workflows do not check out package repositories. The compatibility job separately checks out the published `uniloop/uniscript-pos-development-kit` repository at the selected `kit_ref`, checks both contract snapshots, runs standalone Docker/UI conformance and tests the generic reference package against the actual host.
+
+This workflow becomes usable after the public repository and selected ref are published. Until then, use the same local checks; an unpublished remote is not a conformance result. Select a reviewed commit or tag when verifying a release. **Include LifeFile** is off by default; enabling it separately checks out its repository and adds synthetic LifeFile runtime and UI ZIP-installation tests. If that repository is private, configure the host repository's optional `POS_PACKAGE_REPOSITORIES_TOKEN` secret with read-only access to it.
+
+Every full host run uses a fresh MySQL 8.4 service with a database named `uniscript_pos_packages_test_ci`, exposed only at loopback port 33306. ZIP compatibility and installation checks use SQLite memory databases. Sandbox POS responses are synthetic, Stripe uses its fake driver, and no scheduler or general queue worker is started. The runtime database guard rejects non-test database names, non-loopback hosts, URL/socket overrides and cached application configuration.
+
 ## Local Git preparation
 
 The planned public remote is `https://github.com/uniloop/uniscript-pos-development-kit.git`. While that repository does not exist, the attached local submodule remains usable and commits stay local. Preserve this checkout or a local Git bundle: a future remote cannot serve unpushed commits.

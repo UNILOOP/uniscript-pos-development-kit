@@ -19,7 +19,7 @@ function workbenchUi() {
     vm.runInContext(source, context);
     const frames = [];
     context.embedded = (...args) => frames.push(args);
-    return {context, frames, Element};
+    return {context, frames, Element, setState(value) { context.nextState = value; vm.runInContext('state = nextState;', context); delete context.nextState; }};
 }
 
 test('legacy diagnostics uses an explicit host fallback on every modern surface', () => {
@@ -58,4 +58,32 @@ test('packages without UI use native controls and empty schemas are explained', 
     assert.equal(settings.valid(), true);
     const credentials = app.context.schemaForm({type: 'object', properties: {}, required: []}, {}, true);
     assert.equal(credentials.fields.children[0].textContent, 'This package does not require API credentials.');
+});
+
+
+test('native timezone fallback uses the exact host catalog labels and preserves aliases beyond Intl', () => {
+    const app = workbenchUi();
+    const zones = JSON.parse(readFileSync(new URL('../contracts/timezones.json', import.meta.url), 'utf8'));
+    const browserZones = new Set(Intl.supportedValuesOf('timeZone'));
+    const alias = zones.find(({value}) => value !== 'UTC' && !browserZones.has(value));
+    assert.ok(alias, 'shared PHP timezone catalog includes an identifier absent from this browser catalog');
+    app.setState({reference_timezones: zones});
+    app.context.Intl = {supportedValuesOf() { throw new Error('browser timezone inventory must not replace the host catalog'); }};
+    const form = app.context.schemaForm({type: 'object', properties: {timezone_name: {type: 'string', title: 'Time zone'}}, required: ['timezone_name']}, {timezone_name: alias.value});
+    const select = form.fields.children[0].children.find(({tag}) => tag === 'select');
+    assert.ok(select, 'timezone settings remain a dropdown without browser Intl discovery');
+    assert.deepEqual(Array.from(select.children, ({value, textContent}) => [value, textContent]), [['', 'Choose a time zone'], ...zones.map(({value, label}) => [value, label])]);
+    assert.equal(select.value, alias.value);
+    assert.equal(form.values().timezone_name, alias.value);
+    assert.equal(select.children.find(({value}) => value === 'America/New_York').textContent, 'Eastern Time (America/New_York)');
+});
+
+test('a saved valid timezone alias outside the offered catalog stays selected', () => {
+    const app = workbenchUi();
+    app.setState({reference_timezones: [{value: 'UTC', label: 'Coordinated Universal Time (UTC)'}]});
+    const form = app.context.schemaForm({type: 'object', properties: {timezone_name: {type: 'string'}}, required: ['timezone_name']}, {timezone_name: 'US/Eastern'});
+    const select = form.fields.children[0].children.find(({tag}) => tag === 'select');
+    assert.deepEqual(Array.from(select.children, ({value, textContent}) => [value, textContent]), [['', 'Choose a time zone'], ['UTC', 'Coordinated Universal Time (UTC)'], ['US/Eastern', 'US/Eastern']]);
+    assert.equal(select.value, 'US/Eastern');
+    assert.equal(form.values().timezone_name, 'US/Eastern');
 });
