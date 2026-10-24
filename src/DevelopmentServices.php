@@ -14,9 +14,11 @@ final class DevelopmentServices
 
     private string $namespace;
 
+    private string $transportNamespace;
+
     private int $remaining;
 
-    private array $observed = ['proposals' => [], 'external_references' => [], 'transport' => [], 'resources' => []];
+    private array $observed = ['proposals' => [], 'external_references' => [], 'prescription_references' => [], 'transport' => [], 'resources' => []];
 
     private readonly ?DevelopmentSandboxTransport $sandbox;
 
@@ -25,11 +27,13 @@ final class DevelopmentServices
         Invocation::fromArray($envelope);
         $this->remaining = $envelope['request_budget'];
         $this->namespace = hash('sha256', json_encode(array_intersect_key($envelope, array_flip(['package_id', 'organization_id', 'location_id', 'connection_id', 'environment'])), JSON_THROW_ON_ERROR));
+        $this->transportNamespace = hash('sha256', $this->namespace.':'.self::fingerprint(['credentials' => $credentials, 'configuration' => $configuration]));
         $this->db = new PDO('sqlite:'.$database, options: [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         chmod($database, 0600);
         $this->db->exec('PRAGMA busy_timeout=5000');
         $this->db->exec('CREATE TABLE IF NOT EXISTS development_records (scope TEXT NOT NULL, record_key TEXT NOT NULL, revision INTEGER NOT NULL, value TEXT NOT NULL, PRIMARY KEY(scope, record_key))');
         $this->db->exec('CREATE TABLE IF NOT EXISTS development_transports (scope TEXT NOT NULL, logical_key TEXT NOT NULL, body_hash TEXT NOT NULL, status TEXT NOT NULL, handle TEXT NOT NULL, reference TEXT NOT NULL, PRIMARY KEY(scope, logical_key))');
+        $this->db->exec('CREATE TABLE IF NOT EXISTS development_typed_references (scope TEXT NOT NULL, handle TEXT NOT NULL, kind TEXT NOT NULL, reference TEXT NOT NULL, PRIMARY KEY(scope,handle))');
         $this->sandbox = $options['sandbox_transport'] ?? DevelopmentSandboxTransport::fromEnvironment(dirname($database).'/sandbox-transports.sqlite');
         if ($this->sandbox !== null && $this->sandbox->packageId() === $envelope['package_id']) {
             $this->sandbox->assertHostOwned($deployment['source_root'] ?? throw new RuntimeException('sandbox_execution_source_binding_missing'));
@@ -102,11 +106,23 @@ final class DevelopmentServices
             $selector = $arguments['parameters']['operation_id'] ?? '';
             $route = $profile['routes'][$selector] ?? throw new RuntimeException('development_vendor_operation_not_registered');
         }
+        $route = array_replace($route, $route['operation_policies'][$this->envelope['operation']] ?? []);
         if (isset($route['operations']) && ! in_array($this->envelope['operation'], $route['operations'], true)) {
             throw new RuntimeException('development_vendor_operation_binding_denied');
         }
         if (strlen(json_encode($arguments, JSON_THROW_ON_ERROR)) > ($profile['max_request_bytes'] ?? 131072)) {
             throw new RuntimeException('development_http_request_limit');
+        }
+        foreach (['patient_reference_handle' => 'patient', 'prescription_reference_handle' => 'prescription'] as $field => $kind) {
+            if (isset($arguments['parameters'][$field])) {
+                $this->typedReference($arguments['parameters'][$field], $kind);
+            }
+        }
+        if (($route['reference_kind'] ?? null) === 'order' && ! isset($arguments['parameters']['patient_reference_handle'])) {
+            throw new RuntimeException('development_patient_reference_required');
+        }
+        foreach ($route['reference_fields'] ?? [] as $path => $kind) {
+            $this->validateReferenceFields($arguments['body'] ?? [], explode('.', $path), $kind);
         }
         $this->observed['transport'][] = ['profile' => $arguments['profile'], 'operation_key' => $arguments['operation_key'], 'simulated' => true];
         $scenario = $this->envelope['input']['scenario'] ?? 'accepted';
@@ -140,33 +156,51 @@ final class DevelopmentServices
         if ($scenario === 'malformed_response') {
             return $vendorJson ? ['unexpected' => true] : $rejected(200);
         }
+        $logicalKey = $this->envelope['idempotency_key'].(isset($profile['routes']) ? ':'.$this->envelope['operation'].':'.($arguments['parameters']['operation_id'] ?? '') : '');
         $query = $this->db->prepare('SELECT * FROM development_transports WHERE scope=? AND logical_key=?');
-        $query->execute([$this->namespace, $this->envelope['idempotency_key']]);
+        $query->execute([$this->transportNamespace, $logicalKey]);
         $old = $query->fetch(PDO::FETCH_ASSOC);
         if ($mode === 'order') {
-            $bodyHash = hash('sha256', json_encode($arguments['body'] ?? [], JSON_THROW_ON_ERROR));
+            $bodyHash = self::fingerprint(['body' => $arguments['body'] ?? [], 'parameters' => $arguments['parameters'], 'profile' => $arguments['profile']]);
             if ($old !== false && ! hash_equals($old['body_hash'], $bodyHash)) {
                 throw new RuntimeException('development_idempotency_conflict');
             }
             if ($old === false) {
-                $reference = 'local-order-'.substr(hash('sha256', $this->namespace.':'.$this->envelope['idempotency_key']), 0, 20);
+                $reference = 'local-order-'.substr(hash('sha256', $this->transportNamespace.':'.$logicalKey), 0, 20);
                 $handle = 'external-'.bin2hex(random_bytes(16));
                 $insert = $this->db->prepare('INSERT INTO development_transports VALUES (?,?,?,?,?,?)');
-                $insert->execute([$this->namespace, $this->envelope['idempotency_key'], $bodyHash, 'accepted', $handle, $reference]);
+                $insert->execute([$this->transportNamespace, $logicalKey, $bodyHash, 'accepted', $handle, $reference]);
                 $old = ['status' => 'accepted', 'handle' => $handle, 'reference' => $reference];
             }
             if ($scenario === 'accepted_then_lost') {
                 return ['status' => 'unknown'];
             }
-            $this->observeReference($old);
+            $kind = $route['reference_kind'] ?? 'order';
+            $this->recordTypedReference($old['handle'], $kind, $old['reference']);
+            if ($kind === 'patient') {
+                return ['status' => 'accepted', 'patient_reference_handle' => $old['handle'], 'data' => $this->render($route['response'] ?? [], $old['reference'])];
+            }
+            if (($route['order_acceptance'] ?? true) === true) {
+                $this->observeReference($old);
+            }
+            $prescriptionHandles = [];
+            if (isset($route['reference_kind'])) {
+                $count = count($arguments['body']['prescriptions'] ?? [null]);
+                for ($index = 0; $index < $count; $index++) {
+                    $handle = 'external-'.substr(hash('sha256', $old['handle'].':rx:'.$index), 0, 32);
+                    $this->recordTypedReference($handle, 'prescription', $old['reference'].'-rx-'.($index + 1));
+                    $prescriptionHandles[] = $handle;
+                    $this->observed['prescription_references'][] = ['handle' => $handle, 'reference' => $old['reference'].'-rx-'.($index + 1)];
+                }
+            }
 
-            return ['status' => 'accepted', 'external_reference_handle' => $old['handle'], ...($vendorJson ? ['data' => $this->render($route['response'] ?? [], $old['reference'])] : [])];
+            return ['status' => 'accepted', ...(($route['order_acceptance'] ?? true) === false ? [] : ['external_reference_handle' => $old['handle']]), ...($prescriptionHandles === [] ? [] : ['prescription_reference_handles' => $prescriptionHandles]), ...($vendorJson ? ['data' => $this->render($route['response'] ?? [], $old['reference'])] : [])];
         }
         if (in_array($mode, ['reconcile', 'action'], true)) {
             $handle = $arguments['parameters']['external_reference_handle'] ?? null;
             if ($handle !== null) {
                 $query = $this->db->prepare('SELECT * FROM development_transports WHERE scope=? AND handle=?');
-                $query->execute([$this->namespace, $handle]);
+                $query->execute([$this->transportNamespace, $handle]);
                 $old = $query->fetch(PDO::FETCH_ASSOC);
             }
             if ($old === false) {
@@ -236,7 +270,7 @@ final class DevelopmentServices
                 return $this->sandbox->referenceStatus($this->envelope, (string) ($arguments['external_reference_handle'] ?? ''), $this->configuration);
             }
             $query = $this->db->prepare('SELECT handle FROM development_transports WHERE scope=? AND handle=?');
-            $query->execute([$this->namespace, $arguments['external_reference_handle'] ?? '']);
+            $query->execute([$this->transportNamespace, $arguments['external_reference_handle'] ?? '']);
 
             return $query->fetchColumn() === false ? ['status' => 'unknown'] : ['status' => 'accepted', 'external_reference_handle' => $arguments['external_reference_handle']];
         }
@@ -268,6 +302,65 @@ final class DevelopmentServices
         $this->observed['external_references'][] = ['handle' => $reference['handle'], 'reference' => $reference['reference']];
     }
 
+    private static function fingerprint(array $values): string
+    {
+        $canonical = static function (array $items) use (&$canonical): array {
+            if (! array_is_list($items)) {
+                ksort($items);
+            }
+            foreach ($items as $key => $value) {
+                if (is_array($value)) {
+                    $items[$key] = $canonical($value);
+                }
+            }
+
+            return $items;
+        };
+
+        return hash('sha256', json_encode($canonical($values), JSON_THROW_ON_ERROR));
+    }
+
+    private function recordTypedReference(string $handle, string $kind, string $reference): void
+    {
+        $statement = $this->db->prepare('INSERT INTO development_typed_references VALUES (?,?,?,?) ON CONFLICT(scope,handle) DO NOTHING');
+        $statement->execute([$this->transportNamespace, $handle, $kind, $reference]);
+    }
+
+    private function typedReference(mixed $handle, string $kind): string
+    {
+        if (! is_string($handle)) {
+            throw new RuntimeException('development_owned_reference_required');
+        }
+        $statement = $this->db->prepare('SELECT reference FROM development_typed_references WHERE scope=? AND handle=? AND kind=?');
+        $statement->execute([$this->transportNamespace, $handle, $kind]);
+        $value = $statement->fetchColumn();
+        if (! is_string($value)) {
+            throw new RuntimeException('development_owned_reference_scope_denied');
+        }
+
+        return $value;
+    }
+
+    private function validateReferenceFields(mixed $value, array $segments, string $kind): void
+    {
+        if ($segments === []) {
+            $this->typedReference($value, $kind);
+
+            return;
+        }
+        $field = array_shift($segments);
+        if (! is_array($value)) {
+            throw new RuntimeException('development_reference_field_required');
+        }
+        if ($field === '*') {
+            foreach ($value as $child) {
+                $this->validateReferenceFields($child, $segments, $kind);
+            }
+        } else {
+            $this->validateReferenceFields($value[$field] ?? null, $segments, $kind);
+        }
+    }
+
     private function render(mixed $value, string $reference): mixed
     {
         if (is_array($value)) {
@@ -278,6 +371,6 @@ final class DevelopmentServices
             return $value;
         }
 
-        return $value === '{{reference}}' ? $reference : $value;
+        return is_string($value) ? strtr($value, ['{{reference}}' => $reference, '{{credential.clinic_id}}' => $this->credentials['clinic_id'] ?? $this->configuration['clinic_id'] ?? '']) : $value;
     }
 }

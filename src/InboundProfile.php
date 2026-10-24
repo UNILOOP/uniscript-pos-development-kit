@@ -12,12 +12,15 @@ final class InboundProfile
     public static function validate(array $profile, string $packageId): array
     {
         $keys = ['version', 'authentication', 'label', 'reference_field', 'event_id_field', 'account_fields', 'package_ids'];
-        if (array_diff(array_keys($profile), $keys) !== [] || array_diff($keys, array_keys($profile)) !== []
-            || $profile['version'] !== 1 || $profile['authentication'] !== 'basic'
+        if (array_diff(array_keys($profile), [...$keys, 'prescription_reference_field']) !== [] || array_diff($keys, array_keys($profile)) !== []
+            || $profile['version'] !== 1 || ! in_array($profile['authentication'], ['basic', 'hmac_sha256', 'header_secret'], true)
             || ! is_string($profile['label']) || strlen($profile['label']) > 100
             || ! is_array($profile['package_ids']) || ! array_is_list($profile['package_ids']) || ! in_array($packageId, $profile['package_ids'], true)
             || ! self::field($profile['reference_field']) || ! self::field($profile['event_id_field'])
             || ! is_array($profile['account_fields']) || count($profile['account_fields']) > 5) {
+            throw new InvalidArgumentException('inbound_profile_invalid');
+        }
+        if (isset($profile['prescription_reference_field']) && ! self::field($profile['prescription_reference_field'])) {
             throw new InvalidArgumentException('inbound_profile_invalid');
         }
         foreach ($profile['account_fields'] as $source => $configuration) {

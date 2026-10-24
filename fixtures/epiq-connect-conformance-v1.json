@@ -1,0 +1,539 @@
+{
+  "package_id": "uniscript/epiq-connect",
+  "scenarios": {
+    "identity.describe": [
+      {
+        "input": {},
+        "kind": "success",
+        "expected_calls": [],
+        "expected_http_operations": []
+      }
+    ],
+    "configuration.validate": [
+      {
+        "input": {
+          "config": {
+            "base_url": "https://vendor.example",
+            "timezone_name": "UTC",
+            "create_order_enabled": true
+          }
+        },
+        "kind": "success",
+        "expected_calls": [],
+        "expected_http_operations": []
+      },
+      {
+        "input": {},
+        "kind": "validation_rejection",
+        "expected_calls": [],
+        "expected_http_operations": []
+      }
+    ],
+    "health.probe": [
+      {
+        "input": {
+          "config": {
+            "base_url": "https://vendor.example",
+            "timezone_name": "UTC",
+            "create_order_enabled": true
+          }
+        },
+        "kind": "success",
+        "expected_calls": [
+          "http.request"
+        ],
+        "expected_http_operations": [
+          "validateClient"
+        ],
+        "servicesByOperation": {
+          "validateClient": {
+            "status": "accepted",
+            "data": true
+          }
+        },
+        "expected_http_projection": {
+          "profile": "epiq-connect.api",
+          "operation_key": "health.probe"
+        }
+      }
+    ],
+    "connection.test": [
+      {
+        "input": {
+          "config": {
+            "base_url": "https://vendor.example",
+            "timezone_name": "UTC",
+            "create_order_enabled": true
+          }
+        },
+        "kind": "success",
+        "expected_calls": [
+          "http.request"
+        ],
+        "expected_http_operations": [
+          "validateClient"
+        ],
+        "servicesByOperation": {
+          "validateClient": {
+            "status": "accepted",
+            "data": true
+          }
+        },
+        "expected_http_projection": {
+          "profile": "epiq-connect.api",
+          "operation_key": "connection.test"
+        }
+      }
+    ],
+    "orders.validate": [
+      {
+        "input": {
+          "order_id": "synthetic-epiq-order-1",
+          "order": {
+            "order_id": "synthetic-epiq-order-1",
+            "submitted_at": "2026-10-24T12:00:00Z",
+            "patient": {
+              "first_name": "Synthetic",
+              "last_name": "Patient",
+              "date_of_birth": "1990-01-01",
+              "gender": "male",
+              "email": "synthetic.patient@example.invalid",
+              "phone": "2025550100",
+              "address": {
+                "line1": "100 Example Street",
+                "city": "Test City",
+                "state": "CA",
+                "postal_code": "90001",
+                "country": "US"
+              },
+              "consents": {
+                "sms": false,
+                "marketingOptOut": true,
+                "thirdPartyOptOut": true
+              },
+              "identity": {
+                "driverLicenseNumber": "TEST0000001",
+                "driverLicenseState": "CA"
+              }
+            },
+            "prescriber": {
+              "first_name": "Synthetic",
+              "last_name": "Prescriber",
+              "npi": "1234567893",
+              "phone": "2025550101",
+              "email": "synthetic.prescriber@example.invalid",
+              "address": {
+                "line1": "200 Example Street",
+                "city": "Test City",
+                "state": "CA",
+                "postal_code": "90001",
+                "country": "US"
+              }
+            },
+            "medications": [
+              {
+                "line_key": "synthetic-epiq-line-1",
+                "name": "Synthetic saline",
+                "quantity": "1",
+                "quantity_unit": "each",
+                "directions": "SYNTHETIC TEST ONLY. DO NOT DISPENSE.",
+                "days_supply": 30,
+                "refills": 0,
+                "date_written": "2026-10-24",
+                "substitution_allowed": false,
+                "mapping": {
+                  "ndc": "99999-0001-01",
+                  "schedule_code": "O",
+                  "quantity_unit": "each",
+                  "days_supply": 30
+                }
+              }
+            ]
+          },
+          "config": {
+            "base_url": "https://vendor.example",
+            "timezone_name": "UTC",
+            "create_order_enabled": true
+          }
+        },
+        "kind": "success",
+        "expected_calls": [],
+        "expected_http_operations": []
+      },
+      {
+        "input": {},
+        "kind": "validation_rejection",
+        "expected_calls": [],
+        "expected_http_operations": []
+      }
+    ],
+    "orders.submit": [
+      {
+        "input": {
+          "order_id": "synthetic-epiq-order-1",
+          "order": {
+            "order_id": "synthetic-epiq-order-1",
+            "submitted_at": "2026-10-24T12:00:00Z",
+            "patient": {
+              "first_name": "Synthetic",
+              "last_name": "Patient",
+              "date_of_birth": "1990-01-01",
+              "gender": "male",
+              "email": "synthetic.patient@example.invalid",
+              "phone": "2025550100",
+              "address": {
+                "line1": "100 Example Street",
+                "city": "Test City",
+                "state": "CA",
+                "postal_code": "90001",
+                "country": "US"
+              },
+              "consents": {
+                "sms": false,
+                "marketingOptOut": true,
+                "thirdPartyOptOut": true
+              },
+              "identity": {
+                "driverLicenseNumber": "TEST0000001",
+                "driverLicenseState": "CA"
+              }
+            },
+            "prescriber": {
+              "first_name": "Synthetic",
+              "last_name": "Prescriber",
+              "npi": "1234567893",
+              "phone": "2025550101",
+              "email": "synthetic.prescriber@example.invalid",
+              "address": {
+                "line1": "200 Example Street",
+                "city": "Test City",
+                "state": "CA",
+                "postal_code": "90001",
+                "country": "US"
+              }
+            },
+            "medications": [
+              {
+                "line_key": "synthetic-epiq-line-1",
+                "name": "Synthetic saline",
+                "quantity": "1",
+                "quantity_unit": "each",
+                "directions": "SYNTHETIC TEST ONLY. DO NOT DISPENSE.",
+                "days_supply": 30,
+                "refills": 0,
+                "date_written": "2026-10-24",
+                "substitution_allowed": false,
+                "mapping": {
+                  "ndc": "99999-0001-01",
+                  "schedule_code": "O",
+                  "quantity_unit": "each",
+                  "days_supply": 30
+                }
+              }
+            ]
+          },
+          "config": {
+            "base_url": "https://vendor.example",
+            "timezone_name": "UTC",
+            "create_order_enabled": true
+          }
+        },
+        "kind": "remote_acceptance",
+        "expected_calls": [
+          "http.request",
+          "http.request"
+        ],
+        "expected_http_operations": [
+          "createPatient",
+          "createPrescriptions"
+        ],
+        "servicesByOperation": {
+          "createPatient": {
+            "status": "accepted",
+            "patient_reference_handle": "synthetic-patient-handle",
+            "data": {}
+          },
+          "createPrescriptions": {
+            "status": "accepted",
+            "external_reference_handle": "synthetic-order-handle",
+            "prescription_reference_handles": [
+              "synthetic-rx-handle"
+            ],
+            "data": {}
+          }
+        },
+        "expected_http_projection": {
+          "profile": "epiq-connect.api",
+          "operation_key": "orders.submit"
+        },
+        "expected_http_by_operation": {
+          "createPatient": {
+            "body.patient.firstName": "Synthetic",
+            "body.patient.consents.sms": false
+          },
+          "createPrescriptions": {
+            "parameters.patient_reference_handle": "synthetic-patient-handle",
+            "body.prescriptions.0.ndc": "99999-0001-01",
+            "body.prescriptions.0.isAutoFlow": true,
+            "body.prescriptions.0.isControlledDrug": false
+          }
+        }
+      }
+    ],
+    "orders.reconcile": [
+      {
+        "input": {
+          "external_reference_handle": "synthetic-order-handle"
+        },
+        "kind": "remote_acceptance",
+        "expected_calls": [
+          "http.request"
+        ],
+        "expected_http_operations": [
+          "getOrder"
+        ],
+        "servicesByOperation": {
+          "getOrder": {
+            "status": "accepted",
+            "external_reference_handle": "synthetic-order-handle",
+            "data": []
+          }
+        },
+        "expected_http_projection": {
+          "profile": "epiq-connect.api",
+          "operation_key": "orders.reconcile"
+        }
+      }
+    ],
+    "epiq.prescriptions.stage": [
+      {
+        "input": {
+          "order_id": "synthetic-epiq-order-1",
+          "order": {
+            "order_id": "synthetic-epiq-order-1",
+            "submitted_at": "2026-10-24T12:00:00Z",
+            "patient": {
+              "first_name": "Synthetic",
+              "last_name": "Patient",
+              "date_of_birth": "1990-01-01",
+              "gender": "male",
+              "email": "synthetic.patient@example.invalid",
+              "phone": "2025550100",
+              "address": {
+                "line1": "100 Example Street",
+                "city": "Test City",
+                "state": "CA",
+                "postal_code": "90001",
+                "country": "US"
+              },
+              "consents": {
+                "sms": false,
+                "marketingOptOut": true,
+                "thirdPartyOptOut": true
+              },
+              "identity": {
+                "driverLicenseNumber": "TEST0000001",
+                "driverLicenseState": "CA"
+              }
+            },
+            "prescriber": {
+              "first_name": "Synthetic",
+              "last_name": "Prescriber",
+              "npi": "1234567893",
+              "phone": "2025550101",
+              "email": "synthetic.prescriber@example.invalid",
+              "address": {
+                "line1": "200 Example Street",
+                "city": "Test City",
+                "state": "CA",
+                "postal_code": "90001",
+                "country": "US"
+              }
+            },
+            "medications": [
+              {
+                "line_key": "synthetic-epiq-line-1",
+                "name": "Synthetic saline",
+                "quantity": "1",
+                "quantity_unit": "each",
+                "directions": "SYNTHETIC TEST ONLY. DO NOT DISPENSE.",
+                "days_supply": 30,
+                "refills": 0,
+                "date_written": "2026-10-24",
+                "substitution_allowed": false,
+                "mapping": {
+                  "ndc": "99999-0001-01",
+                  "schedule_code": "O",
+                  "quantity_unit": "each",
+                  "days_supply": 30
+                }
+              }
+            ]
+          },
+          "config": {
+            "base_url": "https://vendor.example",
+            "timezone_name": "UTC",
+            "create_order_enabled": true
+          }
+        },
+        "kind": "success",
+        "expected_calls": [
+          "http.request",
+          "http.request"
+        ],
+        "expected_http_operations": [
+          "createPatient",
+          "createPrescriptions"
+        ],
+        "servicesByOperation": {
+          "createPatient": {
+            "status": "accepted",
+            "patient_reference_handle": "synthetic-patient-handle",
+            "data": {}
+          },
+          "createPrescriptions": {
+            "status": "accepted",
+            "external_reference_handle": "synthetic-order-handle",
+            "prescription_reference_handles": [
+              "synthetic-rx-handle"
+            ],
+            "data": {}
+          }
+        },
+        "expected_http_projection": {
+          "profile": "epiq-connect.api",
+          "operation_key": "epiq.prescriptions.stage"
+        },
+        "expected_http_by_operation": {
+          "createPatient": {
+            "body.patient.firstName": "Synthetic",
+            "body.patient.consents.sms": false
+          },
+          "createPrescriptions": {
+            "parameters.patient_reference_handle": "synthetic-patient-handle",
+            "body.prescriptions.0.ndc": "99999-0001-01",
+            "body.prescriptions.0.isAutoFlow": false,
+            "body.prescriptions.0.isControlledDrug": false
+          }
+        }
+      }
+    ],
+    "epiq.api.execute": [
+      {
+        "input": {
+          "operation_id": "validateClient",
+          "parameters": {}
+        },
+        "kind": "success",
+        "expected_calls": [
+          "http.request"
+        ],
+        "expected_http_operations": [
+          "validateClient"
+        ],
+        "servicesByOperation": {
+          "validateClient": {
+            "status": "accepted",
+            "data": true
+          }
+        },
+        "expected_http_projection": {
+          "profile": "epiq-connect.api",
+          "operation_key": "epiq.api.execute"
+        }
+      }
+    ],
+    "reference.refresh": [
+      {
+        "input": {
+          "config": {
+            "base_url": "https://vendor.example",
+            "timezone_name": "UTC",
+            "create_order_enabled": true
+          }
+        },
+        "kind": "success",
+        "expected_calls": [
+          "http.request"
+        ],
+        "expected_http_operations": [
+          "listPrescribers"
+        ],
+        "servicesByOperation": {
+          "listPrescribers": {
+            "status": "accepted",
+            "data": {
+              "success": true,
+              "count": 0,
+              "data": []
+            }
+          }
+        },
+        "expected_http_projection": {
+          "profile": "epiq-connect.api",
+          "operation_key": "reference.refresh"
+        },
+        "expected_result_projection": {
+          "data.operation_id": "listPrescribers"
+        }
+      }
+    ],
+    "catalog.preview": [
+      {
+        "input": {
+          "records": [
+            {
+              "ndc": "99999-0001-01",
+              "display_name": "Synthetic saline",
+              "schedule_code": "O",
+              "quantity_unit": "each",
+              "days_supply": 30
+            }
+          ]
+        },
+        "kind": "success",
+        "expected_calls": [],
+        "expected_http_operations": []
+      }
+    ],
+    "inbound.decode": [
+      {
+        "input": {
+          "authenticated_receipt": true,
+          "receipt_handle": "synthetic-receipt",
+          "events": [
+            {
+              "eventId": "synthetic-event-0",
+              "prescriptionId": "00000000-0000-4000-8000-000000000021",
+              "orderId": "ORD-SYNTHETIC-0001",
+              "ext_tracking_id": "synthetic-epiq-line-1",
+              "patientId": "00000000-0000-4000-8000-000000000022",
+              "ext_patient_id": "synthetic-patient",
+              "prescriptionStatus": "Entered into System",
+              "cancelledReason": "NA",
+              "updatedDt": "2026-10-24T12:00:00.000Z",
+              "clinicId": "00000000-0000-4000-8000-000000000023",
+              "workflowStatus": "Entered into System",
+              "shippingStatus": "N/A",
+              "trackingNumber": "N/A",
+              "carrier": "N/A",
+              "pcn": "SYNTHETIC-PCN",
+              "rxId": "SYNTHETIC-RX",
+              "message": "Synthetic test only: Entered into System",
+              "isRefill": false
+            }
+          ]
+        },
+        "kind": "success",
+        "expected_calls": [
+          "commands.propose"
+        ]
+      },
+      {
+        "input": {},
+        "kind": "validation_rejection",
+        "expected_calls": []
+      }
+    ]
+  }
+}

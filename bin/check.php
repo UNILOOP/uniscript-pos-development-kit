@@ -11,7 +11,7 @@ putenv('POS_KIT_SANDBOX_PROFILES');
 use UniScript\Integration\Process;
 
 $root = dirname(__DIR__);
-$tests = ['conformance', 'canonical-conformance', 'demo-catalog', 'demo-operations', 'custom-ui-operations', 'manifest-v2', 'packaging', 'protocol-schema', 'resources', 'callbacks', 'command-proposals', 'host-runtime-client', 'local-synthetic-broker', 'mock-pos', 'static-ui', 'static-ui-http', 'developer-tools', 'documentation', 'runtime-image', 'development-runtime', 'development-sandbox-test', 'development-sandbox-http-test', 'development-sandbox-descriptor-test', 'development-connection-evidence-test'];
+$tests = ['conformance-registry', 'conformance', 'canonical-conformance', 'demo-catalog', 'demo-operations', 'custom-ui-operations', 'manifest-v2', 'packaging', 'protocol-schema', 'resources', 'callbacks', 'command-proposals', 'host-runtime-client', 'local-synthetic-broker', 'mock-pos', 'static-ui', 'static-ui-http', 'developer-tools', 'documentation', 'runtime-image', 'development-runtime', 'development-sandbox-test', 'development-sandbox-http-test', 'development-sandbox-descriptor-test', 'development-connection-evidence-test'];
 foreach (glob($root.'/tests/host-contract*.php') ?: [] as $file) {
     $tests[] = basename($file, '.php');
 }

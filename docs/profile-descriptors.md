@@ -107,7 +107,7 @@ Local synthetic verification sets `synthetic_only: true`, enables the transport'
 
 ## Inbound profile
 
-A reviewed Basic callback profile has a version, label, package allowlist, reference/event field paths and account-field bindings. It belongs to the host inbound registry, separately from decoder code. Endpoint credentials are independently registered per connection, and their URL persists across compatible upgrades. Adding a requested profile name to a ZIP does not register an endpoint or configure it with the vendor.
+A reviewed callback profile has a version, label, package allowlist, reference/event field paths and account-field bindings. Authentication can be Basic, raw-body HMAC SHA-256 (`x-hmac-signature`) or a secret `X-API-Key` header; the profile selects exactly one mode. An optional `prescription_reference_field` additionally binds a callback to an accepted prescription in the same order. It belongs to the host inbound registry, separately from decoder code. Endpoint credentials are independently registered per connection, and their URL persists across compatible upgrades. Adding a requested profile name to a ZIP does not register an endpoint or configure it with the vendor.
 
 ## Extending the contract
 

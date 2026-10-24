@@ -236,7 +236,7 @@ final class Platform
         $tested = [];
         $observed = [];
         foreach ($manifest['operations'] as $operation) {
-            foreach (ConformanceProfile::scenarios($operation['key'], $manifest['package_id'], $manifest['manifest_version'], $manifest['version']) as $scenario) {
+            foreach (ConformanceProfile::scenarios($operation['key'], $manifest['package_id'], $manifest['manifest_version'], $manifest['version'], $inspection) as $scenario) {
                 $envelope = $this->syntheticEnvelope($record, $manifest, $operation['key']);
                 $envelope['input'] = $scenario['input'];
                 if ($operation['key'] === 'inbound.decode' && is_array($scenario['input']['events'] ?? null)) {
@@ -270,6 +270,9 @@ final class Platform
         $record['status'] = 'passed';
         $record['_package_id'] = $manifest['package_id'];
         $record['_manifest_version'] = $manifest['manifest_version'];
+        $record['_package_version'] = $manifest['version'];
+        $record['_conformance_package_root'] = $inspection;
+        $record['_conformance_profile_sha256'] = ConformanceProfile::fingerprint($manifest['package_id'], $manifest['version'], $inspection);
 
         return $record;
     }
@@ -280,6 +283,9 @@ final class Platform
         $cert = $this->read('certifications', $input['certification_id']);
         if ($cert['status'] !== 'passed' || $cert['execution_uuid'] !== $record['execution_uuid'] || ! self::sameDigests($cert['digests'], $record['digests'])) {
             throw new RuntimeException('deployment_binding_mismatch');
+        }
+        if (($cert['_conformance_profile_sha256'] ?? null) !== ConformanceProfile::fingerprint($cert['_package_id'], $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null)) {
+            throw new RuntimeException('conformance_profile_changed_after_certification');
         }
         $image = 'sha256:'.$record['digests']['executable_image_sha256'];
         $name = 'uniscript-package-'.$record['id'];
@@ -293,10 +299,10 @@ final class Platform
         if ($running !== 'true') {
             throw new RuntimeException('runtime_not_ready');
         }
-        $readinessOperation = ConformanceProfile::readinessOperation($cert['_package_id']);
+        $readinessOperation = ConformanceProfile::readinessOperation($cert['_package_id'], $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null);
         $health = $this->syntheticEnvelope($record, ['package_id' => $cert['_package_id']], $readinessOperation);
         $health['environment'] = $record['environment'];
-        $health['input'] = ConformanceProfile::scenarios($readinessOperation, $cert['_package_id'], $cert['_manifest_version'] ?? 1)[0]['input'];
+        $health['input'] = ConformanceProfile::scenarios($readinessOperation, $cert['_package_id'], $cert['_manifest_version'] ?? 1, $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null)[0]['input'];
         $health['service_grant'] = 'readiness-no-services';
         $health['request_budget'] = 0;
         $probe = ['docker', 'exec', '-i', '--env', 'PACKAGE_ROOT=/package', '--env', 'EXECUTION_REVISION='.$record['execution_uuid'], '--env', 'SERVICE_TRANSPORT=stdio', $name, 'timeout', '-s', 'KILL', '10', 'php', '-d', 'display_errors=0', '/opt/kit/bin/invoke.php'];

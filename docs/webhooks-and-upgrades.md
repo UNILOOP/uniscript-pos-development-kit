@@ -54,3 +54,9 @@ A connection lineage retains a stable callback URL across compatible package upg
 - Verify settings/mappings remain, the callback URL is stable and both old/new orders decode under their original pins.
 
 Incompatible data requires a migration plan or a clear validation error. Silently dropping mappings or credentials is not an upgrade strategy.
+
+## Authentication and prescription correlation
+
+A reviewed inbound profile can select `basic`, `hmac_sha256` or `header_secret`. Basic uses the registered independent inbound username/password. HMAC verifies the exact raw request bytes using the registered independent secret and the hexadecimal `x-hmac-signature` header. Secret-header authentication compares `X-API-Key` with that independent secret. The native password control stores the secret for all three modes; the username has no authentication role for HMAC or secret-header mode. A configured mode never falls back to another mode, and authentication happens before receipt persistence or decoding.
+
+The optional `prescription_reference_field` identifies an additional owned prescription reference in a callback. The workbench checks that it belongs to the same accepted order before decoding. It can also correlate a prescription-only callback when the main order-reference field is absent. Prescription delivery is tracked independently: a delivered parcel does not complete a multi-prescription order until all of its accepted prescription references have delivered. The production host must enforce the same rule for the reviewed integration.

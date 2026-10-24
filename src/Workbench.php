@@ -585,7 +585,11 @@ final class Workbench
         if ($references === [] && $result['kind'] === 'remote_acceptance') {
             $result = (new Result('unknown_remote_outcome', 'workbench.acceptance_not_verified', [], [], ['action' => 'operator_review', 'resubmit_allowed' => false]))->jsonSerialize();
         }
-        $state['orders'][$id] = ['uuid' => $id, 'connection_id' => $connection['uuid'], 'lineage' => $connection['lineage'], 'organization_id' => $connection['organization_id'], 'location_id' => $connection['location_id'], 'sender_id' => $sender, 'catalog_item_id' => $item, 'environment' => 'sandbox', 'execution_revision' => $connection['execution_revision'], 'configuration_revision' => $connection['configuration_revision'], 'credential_revision' => $credentialRevision, 'transport_binding' => $this->transportBinding($connection), 'mapping_revision' => $mapping['revision'], 'config' => $connection['config'], 'credentials' => $this->store->seal($credentials), 'mapping' => $mapping['values'], 'input' => $this->store->seal($body), 'idempotency_key' => $key, 'request_fingerprint' => $requestFingerprint, 'sender_override' => $usesOverride, 'route_version' => 1, 'delivery_status' => $this->resultDeliveryStatus($result['kind']), 'status' => $result['kind'] === 'remote_acceptance' ? 'submitted_to_pos' : 'queued_for_pos', 'result' => self::safeResult($result), 'references' => $references, 'fulfillments' => [], 'event_ids' => [], 'created_at' => gmdate('c')];
+        $prescriptionReferences = [];
+        foreach ($evidence['prescription_references'] ?? [] as $reference) {
+            $prescriptionReferences[] = ['handle' => $reference['handle'], 'reference' => $this->store->seal(['value' => $reference['reference']])];
+        }
+        $state['orders'][$id] = ['uuid' => $id, 'connection_id' => $connection['uuid'], 'lineage' => $connection['lineage'], 'organization_id' => $connection['organization_id'], 'location_id' => $connection['location_id'], 'sender_id' => $sender, 'catalog_item_id' => $item, 'environment' => 'sandbox', 'execution_revision' => $connection['execution_revision'], 'configuration_revision' => $connection['configuration_revision'], 'credential_revision' => $credentialRevision, 'transport_binding' => $this->transportBinding($connection), 'mapping_revision' => $mapping['revision'], 'config' => $connection['config'], 'credentials' => $this->store->seal($credentials), 'mapping' => $mapping['values'], 'input' => $this->store->seal($body), 'idempotency_key' => $key, 'request_fingerprint' => $requestFingerprint, 'sender_override' => $usesOverride, 'route_version' => 1, 'delivery_status' => $this->resultDeliveryStatus($result['kind']), 'status' => $result['kind'] === 'remote_acceptance' ? 'submitted_to_pos' : 'queued_for_pos', 'result' => self::safeResult($result), 'references' => $references, 'prescription_references' => $prescriptionReferences, 'fulfillments' => [], 'event_ids' => [], 'created_at' => gmdate('c')];
         $this->event($state, 'order.submitted', ['order_id' => $id, 'kind' => $result['kind'], 'reason_code' => $result['reason_code']]);
 
         return $this->orderSummary($state, $state['orders'][$id]);
@@ -768,16 +772,22 @@ final class Workbench
         return ['uuid' => $action['uuid'], 'revision' => $action['revision'], 'operation' => $action['operation'], 'status' => $action['status'], 'result_kind' => $action['result']['kind'], 'created_at' => $action['created_at']];
     }
 
-    public function receive(string $endpointId, string $username, string $password, string $body): array
+    public function receive(string $endpointId, string $username, string $password, string $body, array $headers = []): array
     {
         if (strlen($body) > 65536) {
             throw new InvalidArgumentException('webhook_body_limit');
         }
 
-        return $this->store->transaction(function (array &$state) use ($endpointId, $username, $password, $body): array {
+        return $this->store->transaction(function (array &$state) use ($endpointId, $username, $password, $body, $headers): array {
             $endpoint = $state['endpoints'][$endpointId] ?? throw new RuntimeException('webhook_unauthorized');
             $credentials = $this->store->open($endpoint['credentials']);
-            if (! hash_equals($credentials['username'], $username) || ! hash_equals($credentials['password'], $password)) {
+            $authentication = $endpoint['profile']['authentication'] ?? 'basic';
+            $authenticated = match ($authentication) {
+                'hmac_sha256' => is_string($headers['x-hmac-signature'] ?? null) && preg_match('/\A[a-f0-9]{64}\z/iD', $headers['x-hmac-signature']) === 1 && hash_equals(hash_hmac('sha256', $body, $credentials['password']), strtolower($headers['x-hmac-signature'])),
+                'header_secret' => is_string($headers['x-api-key'] ?? null) && hash_equals($credentials['password'], $headers['x-api-key']),
+                default => hash_equals($credentials['username'], $username) && hash_equals($credentials['password'], $password),
+            };
+            if (! $authenticated) {
                 throw new RuntimeException('webhook_unauthorized');
             }
             $payload = json_decode($body, true, 32, JSON_THROW_ON_ERROR);
@@ -802,12 +812,18 @@ final class Workbench
                 $orderId = $this->findCallbackOrder($state, $endpoint, $source);
                 $orderIds[$index] = $orderId;
                 $order = $state['orders'][$orderId];
+                if (isset($profile['prescription_reference_field'])) {
+                    $claimed = InboundProfile::value($source, $profile['prescription_reference_field']);
+                    if (! is_string($claimed) || ! array_any($order['prescription_references'] ?? [], fn (array $known): bool => hash_equals($this->store->open($known['reference'])['value'], $claimed))) {
+                        throw new InvalidArgumentException('callback_prescription_reference_not_owned');
+                    }
+                }
                 $binding = $order['connection_id'].':'.$order['execution_revision'];
                 if ($decoder !== null && $decoder !== $binding) {
                     throw new InvalidArgumentException('callback_decoder_binding_ambiguous');
                 }
                 $decoder = $binding;
-                foreach ($this->callbackAccounts($profile, $order['config']) as $field => $expected) {
+                foreach ($this->callbackAccounts($profile, [...$order['config'], ...array_intersect_key($this->store->open($order['credentials']), ['clinic_id' => true])]) as $field => $expected) {
                     $actual = InboundProfile::value($source, $field);
                     if ((! is_string($actual) && ! is_int($actual)) || ! hash_equals($expected, (string) $actual)) {
                         throw new InvalidArgumentException('callback_account_mismatch');
@@ -832,7 +848,7 @@ final class Workbench
                 }
                 $event = $proposal['event'];
                 $matches = array_keys(array_filter($sources, static function (array $source) use ($event, $profile): bool {
-                    $reference = InboundProfile::value($source, $profile['reference_field']);
+                    $reference = InboundProfile::value($source, $profile['reference_field']) ?? (isset($profile['prescription_reference_field']) ? InboundProfile::value($source, $profile['prescription_reference_field']) : null);
                     $sourceId = InboundProfile::value($source, $profile['event_id_field']);
                     $eventId = $event['event_id'] ?? null;
 
@@ -875,14 +891,32 @@ final class Workbench
             $payload = ['orderId' => $raw, 'order_id' => $raw, 'reference' => $raw, 'eventId' => $eventId, 'event_id' => $eventId, 'status' => strtolower($status), 'rxStatus' => $status, 'rxStatusDateTime' => $order['created_at'], 'occurred_at' => $order['created_at'], 'trackingNumber' => 'SYNTHETIC-'.substr($orderId, 0, 8), 'tracking_number' => 'SYNTHETIC-'.substr($orderId, 0, 8), 'shipCarrier' => 'Local synthetic vendor', 'carrier' => 'Local synthetic vendor'];
             InboundProfile::set($payload, $profile['reference_field'], $raw);
             InboundProfile::set($payload, $profile['event_id_field'], $eventId);
-            foreach ($this->callbackAccounts($profile, $order['config']) as $field => $value) {
+            foreach ($this->callbackAccounts($profile, [...$order['config'], ...array_intersect_key($this->store->open($order['credentials']), ['clinic_id' => true])]) as $field => $value) {
                 InboundProfile::set($payload, $field, $value);
+            }
+
+            $defaults = $this->fixtures($state['packages'][$order['execution_revision']])['defaults'] ?? [];
+            if (is_array($defaults['callback_template'] ?? null)) {
+                $credentials = $this->store->open($order['credentials']);
+                $render = static function (mixed $value) use (&$render, $raw, $status, $order, $credentials, $defaults): mixed {
+                    if (is_array($value)) {
+                        return array_map($render, $value);
+                    }
+                    if (! is_string($value)) {
+                        return $value;
+                    }
+
+                    return strtr($value, ['{{reference}}' => $raw, '{{status}}' => $defaults['callback_statuses'][$status] ?? $status, '{{created_at}}' => gmdate('Y-m-d\TH:i:s\Z', strtotime($order['created_at'])), '{{order_id}}' => $order['uuid'], '{{credential.clinic_id}}' => $credentials['clinic_id'] ?? $order['config']['clinic_id'] ?? '']);
+                };
+                $payload = $render($defaults['callback_template']);
             }
 
             return ['endpoint' => $endpoint['uuid'], 'credentials' => $this->store->open($endpoint['credentials']), 'payload' => $payload];
         });
 
-        return $this->receive($fixture['endpoint'], $fixture['credentials']['username'], $fixture['credentials']['password'], json_encode($fixture['payload'], JSON_THROW_ON_ERROR));
+        $body = json_encode($fixture['payload'], JSON_THROW_ON_ERROR);
+
+        return $this->receive($fixture['endpoint'], $fixture['credentials']['username'], $fixture['credentials']['password'], $body, ['x-hmac-signature' => hash_hmac('sha256', $body, $fixture['credentials']['password']), 'x-api-key' => $fixture['credentials']['password']]);
     }
 
     private function applyProposal(array &$order, array $proposal, array $payload, array $profile): bool
@@ -892,7 +926,7 @@ final class Workbench
         }
         $proposal = $proposal['event'];
         $owned = false;
-        foreach ($order['references'] as $reference) {
+        foreach ([...$order['references'], ...($profile['prescription_reference_field'] ?? false ? ($order['prescription_references'] ?? []) : [])] as $reference) {
             if ($reference['reference'] !== null && is_string($proposal['external_order_reference'] ?? null) && hash_equals($this->store->open($reference['reference'])['value'], $proposal['external_order_reference'])) {
                 $owned = true;
             }
@@ -921,9 +955,28 @@ final class Workbench
         $order['event_ids'][] = $eventId;
         $order['event_fingerprints'][$eventId] = $sourceFingerprint;
         $delivered = $status === 'delivered';
+        $allPrescriptionsDelivered = true;
+        if (isset($profile['prescription_reference_field'])) {
+            $prescription = InboundProfile::value($payload, $profile['prescription_reference_field']);
+            if (! is_string($prescription) || ($proposal['fill_reference'] ?? null) !== $prescription) {
+                return false;
+            }
+            if ($delivered) {
+                $order['prescription_delivery'][hash('sha256', $prescription)] = true;
+            }
+            foreach ($order['prescription_references'] ?? [] as $known) {
+                $knownValue = $this->store->open($known['reference'])['value'];
+                if (($order['prescription_delivery'][hash('sha256', $knownValue)] ?? false) !== true) {
+                    $allPrescriptionsDelivered = false;
+                }
+            }
+        }
         $target = match ($status) {
             'received', 'queued' => 'accepted', 'in_progress' => 'in_progress', 'ready_for_pickup', 'shipped' => 'ready', 'delivered' => 'completed'
         };
+        if ($target === 'completed' && ! $allPrescriptionsDelivered) {
+            $target = 'ready';
+        }
         $rank = ['submitted_to_pos' => 0, 'accepted' => 1, 'in_progress' => 2, 'ready' => 3, 'completed' => 4];
         if (($rank[$target] ?? 0) > ($rank[$order['status']] ?? 0)) {
             $order['status'] = $target;
@@ -956,7 +1009,7 @@ final class Workbench
     private function findCallbackOrder(array $state, array $endpoint, array $payload): string
     {
         $profile = $endpoint['profile'] ?? $this->inboundProfile($state['packages'][$state['connections'][$endpoint['current_connection']]['execution_revision']]);
-        $reference = InboundProfile::value($payload, $profile['reference_field']);
+        $reference = InboundProfile::value($payload, $profile['reference_field']) ?? (isset($profile['prescription_reference_field']) ? InboundProfile::value($payload, $profile['prescription_reference_field']) : null);
         if (is_int($reference)) {
             $reference = (string) $reference;
         }
@@ -967,7 +1020,7 @@ final class Workbench
             if ($order['lineage'] !== $endpoint['lineage'] || $order['delivery_status'] !== 'succeeded' || ($order['result']['kind'] ?? null) !== 'remote_acceptance') {
                 continue;
             }
-            foreach ($order['references'] as $known) {
+            foreach ([...$order['references'], ...(isset($profile['prescription_reference_field']) ? ($order['prescription_references'] ?? []) : [])] as $known) {
                 if ($known['reference'] !== null && hash_equals($this->store->open($known['reference'])['value'], $reference)) {
                     if (method_exists($this->runtime, 'referenceIsAmbiguous') && $this->runtime->referenceIsAmbiguous($known['handle'])) {
                         throw new InvalidArgumentException('callback_reference_ambiguous');

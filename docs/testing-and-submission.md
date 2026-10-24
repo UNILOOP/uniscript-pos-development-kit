@@ -56,3 +56,13 @@ vendor/bin/pest --configuration=phpunit.packages.xml \
 ```
 
 Set the three `POS_KIT_TEST_DB_*` variables to the disposable database's connection details. The cache path must be absolute and nonexistent. Explicit empty `DB_URL` and `DB_SOCKET` prevent hidden connection overrides; the guard rejects a remote host, working database name, existing config cache or implicit credentials before destructive test setup. These suites create real local package containers and consume only the dedicated test `pos-packages` queue. They never start the scheduler or general queue. Remove only the dedicated database container when finished.
+
+## Reviewed control-plane scenarios
+
+Workbench simulation and independent certification are separate checks. The control plane selects reviewed JSON scenarios from `fixtures/reviewed-conformance-registry.json` using the exact package ID and supported version range. The registry declares a scenario file and a readiness operation that runs without credentials or network services. Every declared handler must have a scenario. A handler that is missing from the selected profile fails certification.
+
+These files belong to the trusted development kit or operator configuration. Uploaded ZIPs cannot choose their own passing assertions. For an additional integration, the operator can set `POS_KIT_CONFORMANCE_REGISTRY` to an absolute registry JSON path outside the uploaded package directory. Scenario filenames are bounded relative JSON basenames beside that registry; symlinks, traversal, mismatched package IDs and overlapping selected versions are rejected. A changed registry or scenario fingerprint invalidates an existing certification before deployment.
+
+Scenarios can declare `servicesByOperation` for distinct vendor operation responses during a multi-step invocation, `expected_http_operations` for their order, `expected_http_projection` and `expected_http_by_operation` for exact safe request fields, and `expected_result_projection` for result checks. A read-only vendor reference response can be checked directly without inventing a storage revision. Keep all example accounts and patient/order values synthetic.
+
+Update the control plane with the reviewed registry alongside its SDK version before accepting a newly reviewed integration. This operator setup does not replace the pharmacy's health test, activation, credential management or the final internal approval of the exact uploaded ZIP.

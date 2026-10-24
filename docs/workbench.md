@@ -138,3 +138,11 @@ php tests/workbench-runtime-test.php /path/to/package /path/to/fixture.json
 ```
 
 The runtime test prints its private synthetic state path for inspection. This is separate from final certification. Run the UniScript host conformance suite against the exact exported ZIP to test authoritative tenant permissions, installation and host service behavior. Use only disposable databases and package-specific test queues; keep dev and production schedulers, general queues and payments untouched.
+
+## Multi-step vendor fixtures
+
+Operator-owned offline routes can set `reference_kind: "patient"` or `"order"`. Patient creation returns `patient_reference_handle` and creates no order acceptance. An order route requires a previously issued `parameters.patient_reference_handle` and returns an order handle plus one `prescription_reference_handles` entry per submitted prescription. Claims are separate for each invocation operation and route selector. Changing body or handle parameters under a claimed logical key fails; typed handles are bound to the connection, configuration and credential values.
+
+Use `reference_fields` to require existing typed handles in other request bodies, for example `{"id":"patient"}` or `{"*.prescriptionIds.*":"prescription"}`. A route can declare `operation_policies: {"vendor.stage": {"order_acceptance": false}}` for an explicitly allowed staging operation. That operation returns prescription handles without claiming an accepted canonical order. These fields control offline fixtures only; hosted transport remains independently reviewed.
+
+`callback_template` and optional `callback_statuses` let an operator describe synthetic callback JSON without vendor branches in the workbench. Supported substitution values are `{{reference}}`, `{{status}}`, `{{created_at}}`, `{{order_id}}` and the pinned `{{credential.clinic_id}}` account identifier. Credentials such as API keys are never available as template substitutions.

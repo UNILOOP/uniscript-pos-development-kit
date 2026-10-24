@@ -74,7 +74,7 @@ try {
             workbenchJson(['error' => 'method_not_allowed'], 405);
         }
         $body = file_get_contents('php://input', false, null, 0, 65537);
-        $result = $workbench->receive($endpoint[1], $_SERVER['PHP_AUTH_USER'] ?? '', $_SERVER['PHP_AUTH_PW'] ?? '', $body ?: '');
+        $result = $workbench->receive($endpoint[1], $_SERVER['PHP_AUTH_USER'] ?? '', $_SERVER['PHP_AUTH_PW'] ?? '', $body ?: '', ['x-hmac-signature' => $_SERVER['HTTP_X_HMAC_SIGNATURE'] ?? '', 'x-api-key' => $_SERVER['HTTP_X_API_KEY'] ?? '']);
         workbenchJson($result, 202);
     }
     session_name('uniscript_workbench');
