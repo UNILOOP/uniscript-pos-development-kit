@@ -6,7 +6,8 @@
       "min_version": "1.0.0",
       "max_version_exclusive": "2.0.0",
       "scenario_file": "epiq-connect-conformance-v1.json",
-      "readiness_operation": "identity.describe"
+      "readiness_operation": "identity.describe",
+      "production_enabled": true
     }
   ]
 }

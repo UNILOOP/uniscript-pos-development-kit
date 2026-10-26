@@ -58,7 +58,7 @@ final class Platform
         }
         if ($kind === 'deployments' && ! in_array($input['environment'], ['local', 'sandbox', 'dev'], true)) {
             $productionCert = $input['environment'] === 'production' ? $this->read('certifications', $input['certification_id']) : null;
-            if ($productionCert === null || ($productionCert['_package_id'] ?? null) !== 'uniscript/lifefile-v2' || ($productionCert['status'] ?? null) !== 'passed') {
+            if ($productionCert === null || ! $this->productionEnabled($productionCert)) {
                 throw new RuntimeException('environment_not_enabled');
             }
         }
@@ -284,8 +284,9 @@ final class Platform
         if ($cert['status'] !== 'passed' || $cert['execution_uuid'] !== $record['execution_uuid'] || ! self::sameDigests($cert['digests'], $record['digests'])) {
             throw new RuntimeException('deployment_binding_mismatch');
         }
-        if (($cert['_conformance_profile_sha256'] ?? null) !== ConformanceProfile::fingerprint($cert['_package_id'], $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null)) {
-            throw new RuntimeException('conformance_profile_changed_after_certification');
+        $this->assertConformanceProfileCurrent($cert);
+        if ($record['environment'] === 'production' && ! $this->productionEnabled($cert)) {
+            throw new RuntimeException('environment_not_enabled');
         }
         $image = 'sha256:'.$record['digests']['executable_image_sha256'];
         $name = 'uniscript-package-'.$record['id'];
@@ -316,6 +317,8 @@ final class Platform
         $record['_container'] = $name;
         $record['_package_id'] = $cert['_package_id'];
         $record['_operations'] = $cert['certification_summary']['operations'];
+        $record['_package_version'] = $cert['_package_version'] ?? '';
+        $record['_conformance_profile_sha256'] = $cert['_conformance_profile_sha256'] ?? null;
 
         return $record;
     }
@@ -323,9 +326,7 @@ final class Platform
     public function invoke(array $envelope): Result
     {
         Invocation::fromArray($envelope);
-        if (($envelope['package_id'] ?? null) !== 'uniscript/lifefile-v2' && ($envelope['environment'] === 'production' || ($envelope['deployment_environment'] ?? $envelope['environment']) === 'production')) {
-            throw new RuntimeException('production_not_enabled');
-        }$deployment = null;
+        $deployment = null;
         foreach (glob($this->state.'/deployments/*.json') as $file) {
             $candidate = json_decode(file_get_contents($file), true, 32, JSON_THROW_ON_ERROR);
             if ($candidate['status'] === 'ready' && $candidate['execution_uuid'] === $envelope['execution_revision'] && $candidate['_package_id'] === $envelope['package_id'] && $candidate['environment'] === ($envelope['deployment_environment'] ?? $envelope['environment'])) {
@@ -335,6 +336,27 @@ final class Platform
         }
         if ($deployment === null) {
             throw new RuntimeException('deployment_not_ready');
+        }
+        if ($envelope['environment'] === 'production' || ($envelope['deployment_environment'] ?? $envelope['environment']) === 'production') {
+            if ($deployment['environment'] !== 'production') {
+                throw new RuntimeException('production_not_enabled');
+            }
+            $cert = $this->read('certifications', $deployment['_input']['certification_id']);
+            if (($cert['status'] ?? null) !== 'passed' || ($cert['execution_uuid'] ?? null) !== $deployment['execution_uuid']
+                || ($cert['_package_id'] ?? null) !== $deployment['_package_id'] || ! self::sameDigests($cert['digests'] ?? null, $deployment['digests'])
+                || ($cert['source_sha256'] ?? null) !== $deployment['source_sha256']
+                || ($cert['digests']['executable_image_sha256'] ?? null) !== $deployment['executable_image_sha256']
+                || ($cert['certification_summary']['operations'] ?? null) !== $deployment['_operations']
+                || ($deployment['_package_version'] ?? $cert['_package_version'] ?? '') !== ($cert['_package_version'] ?? '')) {
+                throw new RuntimeException('deployment_binding_mismatch');
+            }
+            $this->assertConformanceProfileCurrent($cert);
+            if (($deployment['_conformance_profile_sha256'] ?? null) !== ($cert['_conformance_profile_sha256'] ?? null)) {
+                throw new RuntimeException('conformance_profile_changed_after_certification');
+            }
+            if (! $this->productionEnabled($cert)) {
+                throw new RuntimeException('production_not_enabled');
+            }
         }
         if (! in_array($envelope['operation'], $deployment['_operations'], true)) {
             return new Result('unsupported_operation', 'operation.not_certified');
@@ -366,6 +388,23 @@ final class Platform
 
             return $decoded;
         });
+    }
+
+    private function productionEnabled(array $cert): bool
+    {
+        if (($cert['status'] ?? null) !== 'passed' || ! is_string($cert['_package_id'] ?? null)) {
+            return false;
+        }
+        $this->assertConformanceProfileCurrent($cert);
+
+        return ConformanceProfile::productionAllowed($cert['_package_id'], $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null);
+    }
+
+    private function assertConformanceProfileCurrent(array $cert): void
+    {
+        if (($cert['_conformance_profile_sha256'] ?? null) !== ConformanceProfile::fingerprint($cert['_package_id'], $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null)) {
+            throw new RuntimeException('conformance_profile_changed_after_certification');
+        }
     }
 
     private function syntheticEnvelope(array $record, array $manifest, string $operation): array

@@ -40,7 +40,7 @@ $scope=envelope('lifefile.api.execute',['operation_id'=>'getOrderDocument','para
 $result=UniScript\Integration\RuntimeProcess::invoke($command,$scope,static fn(array $request):array=>['status'=>'accepted','data'=>['type'=>'success','data'=>['pdfBase64'=>$pdf]]]);
 check($result->kind==='success'&&($result->data['response']['data']['pdfBase64']??null)===$pdf,'8mib_pdf_output_stdio_round_trip');
 $scope=envelope('identity.describe',[]);$scope['environment']='production';$scope['deployment_environment']='production';Invocation::fromArray($scope);$assertions++;
-$scope['package_id']='uniscript/lifefile';try{Invocation::fromArray($scope);throw new RuntimeException('legacy_production_override_allowed');}catch(InvalidArgumentException){$assertions++;}
+$scope['package_id']='uniscript/lifefile';Invocation::fromArray($scope);check(!ConformanceProfile::productionAllowed('uniscript/lifefile'),'legacy_structural_envelope_cannot_authorize_production');
 $platform=new UniScript\Integration\Platform(sys_get_temp_dir().'/kit-v2-environments-'.bin2hex(random_bytes(6)));
 $certificate=['id'=>str_repeat('a',32),'status'=>'passed','_package_id'=>'uniscript/lifefile-v2'];$platform->save('certifications',$certificate);
 $deployment=['deployment_uuid'=>'synthetic-production','execution_uuid'=>'synthetic-execution','certification_id'=>$certificate['id'],'environment'=>'production','digests'=>[]];

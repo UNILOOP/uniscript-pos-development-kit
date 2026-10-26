@@ -29,6 +29,9 @@ if (in_array('--docker', $argv, true)) {
         $tests[] = 'workbench-lifefile-runtime-test';
         $tests[] = 'workbench-lifefile-catalog-runtime-test';
     }
+    if (getenv('UNISCRIPT_EPIQ_PACKAGE')) {
+        $tests[] = 'production-reviewed-profile';
+    }
     foreach (glob($root.'/tests/development-runtime*-docker.php') ?: [] as $file) {
         if (str_contains($file, '-lifefile-') && ! getenv('UNISCRIPT_LIFEFILE_PACKAGE')) {
             continue;

@@ -197,6 +197,17 @@ final class ConformanceProfile
         return self::reviewedProfile($packageId, $packageVersion, $packageRoot)['sha256'] ?? null;
     }
 
+    public static function productionAllowed(string $packageId, string $packageVersion = '', ?string $packageRoot = null): bool
+    {
+        $profile = self::reviewedProfile($packageId, $packageVersion, $packageRoot);
+        if ($profile !== null) {
+            return $packageVersion !== '' && ($profile['production_enabled'] ?? false) === true;
+        }
+
+        // The pre-registry LifeFile v2 profile retains its existing reviewed production scope.
+        return $packageId === 'uniscript/lifefile-v2';
+    }
+
     private static function reviewedProfile(string $packageId, string $packageVersion, ?string $packageRoot): ?array
     {
         $override = getenv('POS_KIT_CONFORMANCE_REGISTRY');
@@ -210,11 +221,12 @@ final class ConformanceProfile
         }
         $selected = [];
         foreach ($registry['profiles'] as $profile) {
-            if (! is_array($profile) || array_diff(array_keys($profile), ['package_id', 'min_version', 'max_version_exclusive', 'scenario_file', 'readiness_operation']) !== []
+            if (! is_array($profile) || array_diff(array_keys($profile), ['package_id', 'min_version', 'max_version_exclusive', 'scenario_file', 'readiness_operation', 'production_enabled']) !== []
                 || ! is_string($profile['package_id'] ?? null) || ! preg_match('~\A[a-z][a-z0-9-]*/[a-z][a-z0-9-]*\z~D', $profile['package_id'])
                 || ! is_string($profile['min_version'] ?? null) || ! is_string($profile['max_version_exclusive'] ?? null) || ! preg_match('/\A[0-9]+\.[0-9]+\.[0-9]+\z/D', $profile['min_version']) || ! preg_match('/\A[0-9]+\.[0-9]+\.[0-9]+\z/D', $profile['max_version_exclusive'])
                 || version_compare($profile['min_version'], $profile['max_version_exclusive'], '>=') || ! is_string($profile['scenario_file'] ?? null) || ! preg_match('/\A[a-z][a-z0-9-]*\.json\z/D', $profile['scenario_file'])
-                || ! is_string($profile['readiness_operation'] ?? null) || ! preg_match('/\A[a-z][a-z0-9_.-]{1,99}\z/D', $profile['readiness_operation'])) {
+                || ! is_string($profile['readiness_operation'] ?? null) || ! preg_match('/\A[a-z][a-z0-9_.-]{1,99}\z/D', $profile['readiness_operation'])
+                || (array_key_exists('production_enabled', $profile) && ! is_bool($profile['production_enabled']))) {
                 throw new RuntimeException('conformance_profile_invalid');
             }
             if ($profile['package_id'] === $packageId && ($packageVersion === '' || (version_compare($packageVersion, $profile['min_version'], '>=') && version_compare($packageVersion, $profile['max_version_exclusive'], '<')))) {

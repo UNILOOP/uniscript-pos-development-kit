@@ -32,6 +32,13 @@ mkdir($root.'/package', 0700);
 try {
     $check(ConformanceProfile::readinessOperation('uniscript/epiq-connect', '1.0.0') === 'identity.describe', 'Readiness needs no credentials or HTTP grant');
     $check(strlen(ConformanceProfile::fingerprint('uniscript/epiq-connect', '1.0.0')) === 64, 'Reviewed profile has an immutable fingerprint');
+    $check(ConformanceProfile::productionAllowed('uniscript/epiq-connect', '1.0.0'), 'Independently reviewed Epiq version has explicit production scope');
+    $check(! ConformanceProfile::productionAllowed('uniscript/epiq-connect'), 'Production requires an exact reviewed package version');
+    $check(! ConformanceProfile::productionAllowed('uniscript/epiq-connect', '2.0.0'), 'Unreviewed package version cannot inherit production scope');
+    $check(! ConformanceProfile::productionAllowed('acme/epiq-connect', '1.0.0'), 'Vendor lookalike cannot inherit production scope');
+    $check(! ConformanceProfile::productionAllowed('uniscript/demo', '1.0.0'), 'Unreviewed package remains disabled in production');
+    $check(ConformanceProfile::productionAllowed('uniscript/lifefile-v2', '2.1.6'), 'Existing reviewed LifeFile v2 production behavior is preserved');
+    $check(! ConformanceProfile::productionAllowed('uniscript/lifefile', '1.0.5'), 'Legacy LifeFile production remains disabled');
     foreach (['identity.describe', 'configuration.validate', 'health.probe', 'connection.test', 'orders.validate', 'orders.submit', 'orders.reconcile', 'epiq.prescriptions.stage', 'epiq.api.execute', 'reference.refresh', 'catalog.preview', 'inbound.decode'] as $operation) {
         $check(ConformanceProfile::scenarios($operation, 'uniscript/epiq-connect', 2, '1.0.0') !== [], 'Reviewed handler coverage '.$operation);
     }
@@ -47,6 +54,16 @@ try {
     putenv('POS_KIT_CONFORMANCE_REGISTRY='.$root.'/registry.json');
     $check(ConformanceProfile::scenarios('identity.describe', 'acme/vendor', 2, '1.2.3', $root.'/package')[0]['kind'] === 'success', 'Operator-owned generic profile works');
     $fingerprint = ConformanceProfile::fingerprint('acme/vendor', '1.2.3', $root.'/package');
+    $check(! ConformanceProfile::productionAllowed('acme/vendor', '1.2.3', $root.'/package'), 'A reviewed conformance profile alone cannot approve production');
+    $registry['profiles'][0]['production_enabled'] = true;
+    $save($registry, 'registry.json');
+    $check(ConformanceProfile::productionAllowed('acme/vendor', '1.2.3', $root.'/package'), 'Operator-owned explicit production scope works generically');
+    $check($fingerprint !== ConformanceProfile::fingerprint('acme/vendor', '1.2.3', $root.'/package'), 'Changing production policy invalidates certification binding');
+    $registry['profiles'][0]['production_enabled'] = 'true';
+    $save($registry, 'registry.json');
+    $denied(fn () => ConformanceProfile::productionAllowed('acme/vendor', '1.2.3', $root.'/package'), 'conformance_profile_invalid');
+    $registry['profiles'][0] = $profile;
+    $save($registry, 'registry.json');
     file_put_contents($root.'/scenarios.json', "\n", FILE_APPEND);
     $check($fingerprint !== ConformanceProfile::fingerprint('acme/vendor', '1.2.3', $root.'/package'), 'Changing reviewed scenario bytes invalidates certification binding');
     $denied(fn () => ConformanceProfile::scenarios('identity.describe', 'acme/unknown', 2, '1.0.0', $root.'/package'), 'conformance_profile_not_registered');
