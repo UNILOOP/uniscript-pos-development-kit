@@ -63,6 +63,18 @@ try {
         $projection = $workbench->bridge($session['session_id'], workbenchMessage($session, 'order.read'), 'negative-browser', 'http://127.0.0.1:19100');
         HostContract::assertProjection('order.read', $projection);
         workbenchCheck($projection['status'] === 'queued_for_pos' && $projection['delivery_status'] === $order['delivery_status'] && ! array_key_exists('result', $projection), 'Embedded order DTO matches the actual host shape: '.$scenario);
+        $corrections = $workbench->bridge($session['session_id'], workbenchMessage($session, 'order.corrections.read', [], 'query', 'corrections'), 'negative-browser', 'http://127.0.0.1:19100');
+        HostContract::assertProjection('order.corrections.read', $corrections);
+        $canEdit = in_array($kind, ['validation_rejection', 'temporary_failure', 'permanent_failure', 'unknown_remote_outcome'], true);
+        workbenchCheck($corrections['editable'] === $canEdit, 'Correction eligibility matches safe future-mapping edits: '.$scenario);
+        if ($scenario === 'validation_rejection') {
+            $beforeCount = count($workbench->snapshot()['orders']);
+            workbenchDenied(fn () => $workbench->bridge($session['session_id'], workbenchMessage($session, 'mapping.save', ['catalog_item_uuid' => WorkbenchState::uuid(), 'values' => $fixture['mapping'], 'expected_revision' => 1], 'action', 'wrong-item'), 'negative-browser', 'http://127.0.0.1:19100'), 'order_mapping_scope_denied');
+            $saved = $workbench->bridge($session['session_id'], workbenchMessage($session, 'mapping.save', ['catalog_item_uuid' => $ids['catalog_item_id'], 'values' => $fixture['mapping'], 'expected_revision' => 1], 'action', 'save'), 'negative-browser', 'http://127.0.0.1:19100');
+            workbenchCheck($saved['revision'] === 2 && count($workbench->snapshot()['orders']) === $beforeCount, 'Mapping correction creates a revision without resubmitting an order');
+            $original = array_values(array_filter($workbench->snapshot()['orders'], static fn (array $candidate): bool => $candidate['uuid'] === $order['uuid']))[0];
+            workbenchCheck($original['mapping_revision'] === 1, 'Submitted order retains its original mapping revision');
+        }
         workbenchDenied(fn () => HostContract::assertProjection('order.read', [...$projection, 'status' => 'unknown']), 'schema_enum:$.status');
         workbenchDenied(fn () => HostContract::assertProjection('order.read', [...$projection, 'delivery_status' => 'validation_rejection']), 'schema_enum:$.delivery_status');
     }

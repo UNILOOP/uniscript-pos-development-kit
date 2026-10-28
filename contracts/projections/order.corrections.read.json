@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "needed",
+    "reason_code",
+    "field_errors",
+    "editable",
+    "mappings"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "needed": {
+      "type": "boolean"
+    },
+    "reason_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "field_errors": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "reason_code"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "reason_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    "editable": {
+      "type": "boolean"
+    },
+    "mappings": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "required": [
+          "catalog_item_uuid",
+          "label",
+          "schema",
+          "values",
+          "revision",
+          "status",
+          "reason_code",
+          "editable"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "catalog_item_uuid": {
+            "type": "string"
+          },
+          "label": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
+          "schema": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "values": {
+            "type": [
+              "object",
+              "array"
+            ],
+            "maxItems": 0
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "editable": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

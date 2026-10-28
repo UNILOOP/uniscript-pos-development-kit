@@ -17,6 +17,6 @@ test('advertised handler bindings never grant more than the selected surface', (
     for (const [surface, value] of Object.entries(contract.ui.surfaces)) {
         const actions = operationHandlers(value.actions, async () => ({}));
         assert.deepEqual(Object.keys(actions), value.actions);
-        if (surface.endsWith('order.details')) assert.deepEqual(actions, {});
+        if (surface === 'sender.order.details') assert.deepEqual(actions, {});
     }
 });

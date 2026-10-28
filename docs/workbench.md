@@ -101,10 +101,10 @@ The workbench uses the canonical bridge and projection schemas under `contracts/
 | --- | --- | --- |
 | `connection.setup` | `context.read`, `config.read`, `reference.timezones` | `config.save` |
 | `catalog.item.mapping` | `context.read`, `mapping.read` | `mapping.save` |
-| `pharmacy.order.details` | `context.read`, `order.read`, `fulfillments.read` | None |
+| `pharmacy.order.details` | `context.read`, `order.read`, `fulfillments.read`, `order.corrections.read`, `config.read`, `reference.timezones` | `mapping.save`, `config.save`, `order.setup.open` |
 | `sender.order.details` | `context.read`, `order.read`, `fulfillments.read` | None |
 
-Credentials, activation, probes, sender overrides and webhook registration are host controls outside the iframe. Configuration and mapping saves expire the session and require refresh. Order views expose opaque reference handles and 12-character fingerprints, shipment status/carrier and boolean tracking/shipped/delivered indicators. They do not expose raw references, tracking, credentials, configuration, patient or prescriber data.
+Credentials, activation, probes, sender overrides and webhook registration are host controls outside the iframe. Configuration and mapping saves expire the session and require refresh. Order views expose opaque reference handles and 12-character fingerprints, shipment status/carrier and boolean tracking/shipped/delivered indicators. Sender projections do not expose configuration or correction controls. Neither audience receives raw references, tracking, credentials, patient or prescriber data. Pharmacy views can separately request safe configuration and order-bound mapping correction data; see [the UI reference](ui.md#correcting-setup-and-mappings-from-an-order).
 
 Static package CSP blocks network access, nested frames, workers, plugins, forms, external styles/fonts/images and host access. Frames permit scripts and same-origin within their isolated package origin. Exact source window/origin, nonce, session, execution and revision are checked; resize is presentation-only and bounded to 160–10000 integer pixels.
 

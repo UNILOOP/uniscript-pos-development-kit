@@ -1150,7 +1150,17 @@ final class Workbench
             if ($message['kind'] === 'query' && $arguments !== []) {
                 throw new InvalidArgumentException('bridge_query_arguments_forbidden');
             }
+            if ($operation === 'order.setup.open') {
+                if ($arguments !== []) {
+                    throw new InvalidArgumentException('bridge_setup_arguments_forbidden');
+                }
+
+                return ['host_navigation' => '/#connections'];
+            }
             if ($operation === 'config.save') {
+                if ($connection['status'] !== 'draft') {
+                    throw new RuntimeException('only_draft_configuration_editable');
+                }
                 if (array_keys($arguments) !== ['config'] || ! is_array($arguments['config'])) {
                     throw new InvalidArgumentException('bridge_config_arguments');
                 }
@@ -1159,18 +1169,25 @@ final class Workbench
                 return ['host_reload_required' => true];
             }
             if ($operation === 'mapping.save') {
-                if (array_diff(array_keys($arguments), ['values', 'expected_revision']) !== []) {
+                if (array_diff(array_keys($arguments), $order === null ? ['values', 'expected_revision'] : ['values', 'expected_revision', 'catalog_item_uuid']) !== []) {
                     throw new InvalidArgumentException('bridge_mapping_arguments');
                 }
 
-                return $this->saveMapping($state, $connection, [...$arguments, 'catalog_item_id' => $session['catalog_item_id']]);
+                if ($order !== null && (! $this->orderCorrections($state, $connection, $order)['editable'] || ($arguments['catalog_item_uuid'] ?? null) !== $order['catalog_item_id'])) {
+                    throw new RuntimeException('order_mapping_scope_denied');
+                }
+                $saved = $this->saveMapping($state, $connection, [...$arguments, 'catalog_item_id' => $order['catalog_item_id'] ?? $session['catalog_item_id']]);
+                unset($state['sessions'][$id]);
+
+                return ['revision' => $saved['revision'], 'status' => $saved['status'], 'host_reload_required' => true];
             }
             $deployment = $state['packages'][$session['execution_revision']];
 
             $projection = match ($operation) {
                 'context.read' => ['package_id' => $deployment['manifest']['package_id'], 'package_version' => $deployment['manifest']['version'], 'execution_revision' => $session['execution_revision'], 'environment' => 'sandbox', 'deployment_environment' => 'local', 'connection_status' => $connection['status'], 'setup_test_current' => $this->fresh($connection, 'test'), 'surface' => $session['surface'], 'catalog_item_uuid' => $session['catalog_item_id'], 'order_uuid' => $session['order_id'], 'sensitive_operations_available' => false],
-                'config.read' => ['editable' => true, 'schema' => $this->safeConfigurationSchema($deployment), 'values' => array_filter(array_intersect_key($connection['config'], $this->safeConfigurationSchema($deployment)['properties']), is_scalar(...)), 'credentials_host_owned' => true],
+                'config.read' => ['editable' => $connection['status'] === 'draft', 'schema' => $this->safeConfigurationSchema($deployment), 'values' => array_filter(array_intersect_key($connection['config'], $this->safeConfigurationSchema($deployment)['properties']), is_scalar(...)), 'credentials_host_owned' => true],
                 'mapping.read' => ['schema' => $this->schema($deployment, 'order_mapping', true), 'values' => $connection['mappings'][$session['catalog_item_id']]['values'] ?? [], 'revision' => $connection['mappings'][$session['catalog_item_id']]['revision'] ?? 0, 'status' => $connection['mappings'][$session['catalog_item_id']]['status'] ?? null],
+                'order.corrections.read' => $this->orderCorrections($state, $connection, $order),
                 'order.read' => $this->orderProjection($order),
                 'fulfillments.read' => ['fulfillments' => $order['fulfillments']],
                 'reference.timezones' => ['options' => HostContract::timezones()],
@@ -1248,6 +1265,25 @@ final class Workbench
         $statuses = HostContract::read()['runtime']['result_statuses'] ?? [];
 
         return $statuses[$kind] ?? throw new InvalidArgumentException('host_result_status_contract_unavailable');
+    }
+
+    private function orderCorrections(array $state, array $connection, array $order): array
+    {
+        $editable = $connection['status'] === 'active' && $order['status'] === 'queued_for_pos' && $order['execution_revision'] === $connection['execution_revision']
+            && in_array($order['result']['kind'] ?? null, ['validation_rejection', 'permanent_failure', 'temporary_failure', 'unknown_remote_outcome'], true);
+        $mapping = $connection['mappings'][$order['catalog_item_id']] ?? null;
+        $fields = [];
+        foreach (array_slice($order['result']['field_errors'] ?? [], 0, 50) as $error) {
+            if (is_array($error) && is_string($error['path'] ?? null) && is_string($error['reason_code'] ?? null)
+                && preg_match('/\A[a-zA-Z][a-zA-Z0-9_.\[\]]{0,119}\z/D', $error['path']) === 1
+                && preg_match('/\A[a-z][a-z0-9_.]{0,127}\z/D', $error['reason_code']) === 1) {
+                $fields[] = ['path' => $error['path'], 'reason_code' => $error['reason_code']];
+            }
+        }
+
+        return ['needed' => $connection['status'] === 'active' && $order['status'] === 'queued_for_pos' && in_array($order['result']['kind'] ?? null, ['validation_rejection', 'permanent_failure', 'temporary_failure', 'unknown_remote_outcome'], true), 'reason_code' => $order['result']['reason_code'] ?? null, 'field_errors' => $fields, 'editable' => $editable, 'mappings' => [
+            ['catalog_item_uuid' => $order['catalog_item_id'], 'label' => 'Product mapping', 'schema' => $this->schema($state['packages'][$connection['execution_revision']], 'order_mapping', true), 'values' => $mapping['values'] ?? [], 'revision' => $mapping['revision'] ?? 0, 'status' => $mapping['status'] ?? null, 'reason_code' => $mapping === null ? 'approved_package_mapping_required' : null, 'editable' => $editable],
+        ]];
     }
 
     private function orderProjection(array $order): array

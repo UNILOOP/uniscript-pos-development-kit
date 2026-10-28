@@ -209,9 +209,16 @@
                 "queries": [
                     "context.read",
                     "order.read",
-                    "fulfillments.read"
+                    "fulfillments.read",
+                    "order.corrections.read",
+                    "config.read",
+                    "reference.timezones"
                 ],
-                "actions": []
+                "actions": [
+                    "mapping.save",
+                    "config.save",
+                    "order.setup.open"
+                ]
             },
             "sender.order.details": {
                 "queries": [
@@ -277,6 +284,16 @@
         ],
         "reference.timezones": [
             "options"
+        ],
+        "order.corrections.read": [
+            "needed",
+            "reason_code",
+            "field_errors",
+            "editable",
+            "mappings"
+        ],
+        "order.setup.open": [
+            "host_navigation"
         ],
         "order.read": [
             "uuid",

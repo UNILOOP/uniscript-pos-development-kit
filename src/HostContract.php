@@ -55,7 +55,7 @@ final class HostContract
                 }
             }
             if (array_intersect($operations['queries'], $operations['actions']) !== [] || ! in_array('context.read', $operations['queries'], true)
-                || (str_ends_with($surface, 'order.details') && $operations['actions'] !== [])) {
+                || ($surface === 'sender.order.details' && $operations['actions'] !== [])) {
                 throw new InvalidArgumentException('host_contract_surface_authority');
             }
         }

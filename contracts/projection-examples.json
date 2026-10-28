@@ -75,5 +75,33 @@
   },
   "fulfillments.read": {
     "fulfillments": []
+  },
+  "order.corrections.read": {
+    "needed": true,
+    "reason_code": "approved_package_mapping_required",
+    "field_errors": [],
+    "editable": true,
+    "mappings": [
+      {
+        "catalog_item_uuid": "00000000-0000-4000-8000-000000000004",
+        "label": "Synthetic catalog item",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "product_id": {
+              "type": "string"
+            }
+          }
+        },
+        "values": [],
+        "revision": 0,
+        "status": null,
+        "reason_code": "approved_package_mapping_required",
+        "editable": true
+      }
+    ]
+  },
+  "order.setup.open": {
+    "host_navigation": "/#connections"
   }
 }

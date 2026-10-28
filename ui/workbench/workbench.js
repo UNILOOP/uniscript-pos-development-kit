@@ -652,6 +652,9 @@ async function embedded(connection, surface, parent, catalogItemId, orderId) {
         frame = createPackageFrame(document, { assetUrl: binding.asset_url, packageOrigin: binding.package_origin, hostOrigin: binding.host_origin, title: `${connection.display_name} ${human(surface)}` });
         const handlers = (names, kind) => Object.fromEntries(names.map((operation) => [operation, async (_context, arguments_, id) => {
             const result = await request(binding.bridge_url, { version: '1', id, nonce: binding.nonce, session_id: binding.session_id, execution_revision: binding.execution_revision, expected_revision: binding.expected_revision, kind, operation, arguments: arguments_ });
+            if (operation === 'order.setup.open' && result.host_navigation === '/#connections') {
+                window.location.hash = 'connections';
+            }
             if (result.host_reload_required) {
                 status.textContent = 'Saved. Refresh these details to continue.'; status.hidden = false;
             }

@@ -187,10 +187,20 @@ try {
     workbenchCheck($mappingRead['values'] === $fixture['mapping'], 'Mapping projection real published values');
     foreach (['pharmacy', 'sender'] as $audience) {
         $session = $workbench->openSession($id, $audience.'.order.details', $browser, $host, null, $order['uuid']);
-        workbenchCheck($session['actions'] === [], 'Order audience is read only');
+        workbenchCheck($audience === 'sender' ? $session['actions'] === [] : in_array('mapping.save', $session['actions'], true), 'Order correction authority follows audience');
         $read = $workbench->bridge($session['session_id'], workbenchMessage($session, 'order.read'), $browser, $host);
         HostContract::assertProjection('order.read', $read);
         workbenchCheck(! str_contains(json_encode($read), 'Synthetic Patient') && ! str_contains(json_encode($read), 'synthetic-vendor-'), 'Order projection has no raw clinical/reference data');
+        if ($audience === 'pharmacy') {
+            $corrections = $workbench->bridge($session['session_id'], workbenchMessage($session, 'order.corrections.read', [], 'query', 'corrections'), $browser, $host);
+            HostContract::assertProjection('order.corrections.read', $corrections);
+            workbenchCheck($corrections['editable'] === false, 'Accepted orders preserve submission snapshots');
+
+            workbenchDenied(fn () => $workbench->bridge($session['session_id'], workbenchMessage($session, 'order.setup.open', ['url' => 'https://untrusted.example'], 'action', 'unsafe-setup'), $browser, $host), 'bridge_setup_arguments_forbidden');
+            $setupResult = $workbench->bridge($session['session_id'], workbenchMessage($session, 'order.setup.open', [], 'action', 'safe-setup'), $browser, $host);
+            workbenchCheck($setupResult === ['host_navigation' => '/#connections'], 'Setup navigation is chosen by the host');
+            continue;
+        }
         workbenchDenied(fn () => $workbench->bridge($session['session_id'], workbenchMessage($session, 'config.read'), $browser, $host), 'bridge_operation_denied');
         workbenchDenied(fn () => $workbench->bridge($session['session_id'], workbenchMessage($session, 'config.save', ['config' => []], 'action'), $browser, $host), 'bridge_operation_denied');
     }
