@@ -6,7 +6,7 @@ namespace UniScript\Integration;
 
 use InvalidArgumentException;
 
-/** Requests existing host profile names; it cannot define or approve their authority. */
+/** Packaging metadata only. Internal host approval remains the authority for release declarations. */
 final class HostRequirements
 {
     public const int MAXIMUM_BYTES = 16384;
@@ -34,8 +34,9 @@ final class HostRequirements
             throw new InvalidArgumentException('host_requirements_json_shapes');
         }
         $requirements = JsonDocument::decode($json, true);
-        $keys = ['contract_version', 'transport_profiles', 'verification_profile', 'inbound_profiles'];
-        if (!is_array($requirements) || array_diff($keys, array_keys($requirements)) !== [] || array_diff(array_keys($requirements), $keys) !== [] || ($requirements['contract_version'] ?? null) !== 1) {
+        $version = $requirements['contract_version'] ?? null;
+        $keys = ['contract_version', 'transport_profiles', 'verification_profile', 'inbound_profiles', ...($version === 2 ? ['package_id', 'definitions'] : [])];
+        if (!is_array($requirements) || array_diff($keys, array_keys($requirements)) !== [] || array_diff(array_keys($requirements), $keys) !== [] || !in_array($version, [1, 2], true)) {
             throw new InvalidArgumentException('host_requirements_fields');
         }
         foreach (['transport_profiles', 'inbound_profiles'] as $field) {
@@ -51,6 +52,40 @@ final class HostRequirements
         }
         if ($requirements['verification_profile'] !== null) {
             self::assertName($requirements['verification_profile']);
+        }
+
+        if ($version === 2) {
+            $id = $requirements['package_id'];
+            $definitions = $requirements['definitions'];
+            if (!is_string($id) || !preg_match('/\A[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*\z/D', $id) || !is_array($definitions)
+                || array_diff(array_keys($definitions), ['transport', 'verification', 'inbound', 'policy']) !== []) {
+                throw new InvalidArgumentException('host_requirements_definitions');
+            }
+            foreach (['transport', 'verification', 'inbound'] as $kind) {
+                if (!is_array($definitions[$kind] ?? null) || count($definitions[$kind]) > 32) {
+                    throw new InvalidArgumentException('host_requirements_definitions');
+                }
+                foreach ($definitions[$kind] as $name => $profile) {
+                    self::assertName($name);
+                    if (!is_array($profile) || ($profile['package_ids'] ?? null) !== [$id]) {
+                        throw new InvalidArgumentException('host_requirements_definition_ownership');
+                    }
+                    if ($kind === 'transport' && (($profile['profile_version'] ?? null) !== 1 || isset($profile['body_rules'])
+                        || ($profile['allow_local_synthetic'] ?? false) !== false || !is_string($profile['base_url'] ?? null)
+                        || parse_url($profile['base_url'], PHP_URL_SCHEME) !== 'https')) {
+                        throw new InvalidArgumentException('host_requirements_transport');
+                    }
+                    if ($kind === 'verification' && ($profile['synthetic_only'] ?? true) !== false) {
+                        throw new InvalidArgumentException('host_requirements_verification');
+                    }
+                }
+            }
+            $policy = $definitions['policy'] ?? null;
+            if (!is_array($policy) || array_diff(array_keys($policy), ['self_service', 'verification_profile']) !== []
+                || !is_bool($policy['self_service'] ?? null) || !is_string($policy['verification_profile'] ?? null)
+                || !isset($definitions['verification'][$policy['verification_profile']])) {
+                throw new InvalidArgumentException('host_requirements_policy');
+            }
         }
 
         return $requirements;

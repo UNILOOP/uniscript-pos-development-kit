@@ -9,9 +9,9 @@ use RuntimeException;
 /** Trusted synthetic scenarios, selected by platform profile rather than package assertions. */
 final class ConformanceProfile
 {
-    public static function scenarios(string $operation, string $packageId = '', int $manifestVersion = 1, string $packageVersion = '', ?string $packageRoot = null): array
+    public static function scenarios(string $operation, string $packageId = '', int $manifestVersion = 1, string $packageVersion = '', ?string $packageRoot = null, ?array $reviewed = null): array
     {
-        $profile = self::reviewedProfile($packageId, $packageVersion, $packageRoot);
+        $profile = self::reviewedProfile($packageId, $packageVersion, $packageRoot, $reviewed);
         if ($profile !== null) {
             return $profile['scenarios'][$operation] ?? throw new RuntimeException('trusted_scenario_not_available:'.$operation);
         }
@@ -70,9 +70,9 @@ final class ConformanceProfile
         };
     }
 
-    public static function readinessOperation(string $packageId, string $packageVersion = '', ?string $packageRoot = null): string
+    public static function readinessOperation(string $packageId, string $packageVersion = '', ?string $packageRoot = null, ?array $reviewed = null): string
     {
-        $profile = self::reviewedProfile($packageId, $packageVersion, $packageRoot);
+        $profile = self::reviewedProfile($packageId, $packageVersion, $packageRoot, $reviewed);
         if ($profile !== null) {
             return $profile['readiness_operation'];
         }
@@ -192,14 +192,14 @@ final class ConformanceProfile
         }
     }
 
-    public static function fingerprint(string $packageId, string $packageVersion = '', ?string $packageRoot = null): ?string
+    public static function fingerprint(string $packageId, string $packageVersion = '', ?string $packageRoot = null, ?array $reviewed = null): ?string
     {
-        return self::reviewedProfile($packageId, $packageVersion, $packageRoot)['sha256'] ?? null;
+        return self::reviewedProfile($packageId, $packageVersion, $packageRoot, $reviewed)['sha256'] ?? null;
     }
 
-    public static function productionAllowed(string $packageId, string $packageVersion = '', ?string $packageRoot = null): bool
+    public static function productionAllowed(string $packageId, string $packageVersion = '', ?string $packageRoot = null, ?array $reviewed = null): bool
     {
-        $profile = self::reviewedProfile($packageId, $packageVersion, $packageRoot);
+        $profile = self::reviewedProfile($packageId, $packageVersion, $packageRoot, $reviewed);
         if ($profile !== null) {
             return $packageVersion !== '' && ($profile['production_enabled'] ?? false) === true;
         }
@@ -208,8 +208,12 @@ final class ConformanceProfile
         return $packageId === 'uniscript/lifefile-v2';
     }
 
-    private static function reviewedProfile(string $packageId, string $packageVersion, ?string $packageRoot): ?array
+    private static function reviewedProfile(string $packageId, string $packageVersion, ?string $packageRoot, ?array $reviewed = null): ?array
     {
+        if ($reviewed !== null) {
+            $profile = ReviewedConformance::validate($reviewed, $packageId, $packageVersion);
+            return [...$profile, 'sha256' => ReviewedConformance::fingerprint($profile)];
+        }
         $override = getenv('POS_KIT_CONFORMANCE_REGISTRY');
         $path = is_string($override) && $override !== '' ? $override : dirname(__DIR__).'/fixtures/reviewed-conformance-registry.json';
         if (is_string($override) && $override !== '' && $packageRoot === null) {

@@ -69,7 +69,10 @@ final class Manifest
             }
         }
         StaticUi::inspect($root, $manifest);
-        HostRequirements::read($root);
+        $requirements = HostRequirements::read($root);
+        if (($requirements['contract_version'] ?? 1) === 2 && $requirements['package_id'] !== $manifest['package_id']) {
+            throw new InvalidArgumentException('host_requirements_package_ownership');
+        }
         foreach (['composer.json', 'composer.lock'] as $file) {
             JsonDocument::decode(file_get_contents($root.'/'.$file), true);
         }

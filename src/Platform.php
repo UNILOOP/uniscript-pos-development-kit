@@ -232,11 +232,18 @@ final class Platform
         if (hash_file('sha256', $inspection.'/composer.lock') !== $record['digests']['lockfile_sha256'] || self::treeHash($build['_work'].'/src') !== $record['digests']['sdk_sha256'] || self::treeHash($build['_work'].'/bin') !== $record['digests']['supervisor_sha256']) {
             throw new RuntimeException('artifact_ingredient_mismatch');
         }
+        $reviewed = $record['_input']['reviewed_profile'] ?? null;
+        if ($reviewed !== null) {
+            if (!is_array($reviewed)) { throw new RuntimeException('reviewed_conformance_scope_invalid'); }
+            $reviewed = ReviewedConformance::validate($reviewed, $manifest['package_id'], $manifest['version'], $record['source_sha256'], array_column($manifest['operations'], 'key'));
+            $record['_reviewed_profile'] = $reviewed;
+            $record['reviewed_profile_sha256'] = ReviewedConformance::fingerprint($reviewed);
+        }
         $host = new SyntheticHost;
         $tested = [];
         $observed = [];
         foreach ($manifest['operations'] as $operation) {
-            foreach (ConformanceProfile::scenarios($operation['key'], $manifest['package_id'], $manifest['manifest_version'], $manifest['version'], $inspection) as $scenario) {
+            foreach (ConformanceProfile::scenarios($operation['key'], $manifest['package_id'], $manifest['manifest_version'], $manifest['version'], $inspection, $reviewed) as $scenario) {
                 $envelope = $this->syntheticEnvelope($record, $manifest, $operation['key']);
                 $envelope['input'] = $scenario['input'];
                 if ($operation['key'] === 'inbound.decode' && is_array($scenario['input']['events'] ?? null)) {
@@ -272,7 +279,7 @@ final class Platform
         $record['_manifest_version'] = $manifest['manifest_version'];
         $record['_package_version'] = $manifest['version'];
         $record['_conformance_package_root'] = $inspection;
-        $record['_conformance_profile_sha256'] = ConformanceProfile::fingerprint($manifest['package_id'], $manifest['version'], $inspection);
+        $record['_conformance_profile_sha256'] = ConformanceProfile::fingerprint($manifest['package_id'], $manifest['version'], $inspection, $reviewed);
 
         return $record;
     }
@@ -300,10 +307,10 @@ final class Platform
         if ($running !== 'true') {
             throw new RuntimeException('runtime_not_ready');
         }
-        $readinessOperation = ConformanceProfile::readinessOperation($cert['_package_id'], $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null);
+        $readinessOperation = ConformanceProfile::readinessOperation($cert['_package_id'], $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null, $cert['_reviewed_profile'] ?? null);
         $health = $this->syntheticEnvelope($record, ['package_id' => $cert['_package_id']], $readinessOperation);
         $health['environment'] = $record['environment'];
-        $health['input'] = ConformanceProfile::scenarios($readinessOperation, $cert['_package_id'], $cert['_manifest_version'] ?? 1, $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null)[0]['input'];
+        $health['input'] = ConformanceProfile::scenarios($readinessOperation, $cert['_package_id'], $cert['_manifest_version'] ?? 1, $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null, $cert['_reviewed_profile'] ?? null)[0]['input'];
         $health['service_grant'] = 'readiness-no-services';
         $health['request_budget'] = 0;
         $probe = ['docker', 'exec', '-i', '--env', 'PACKAGE_ROOT=/package', '--env', 'EXECUTION_REVISION='.$record['execution_uuid'], '--env', 'SERVICE_TRANSPORT=stdio', $name, 'timeout', '-s', 'KILL', '10', 'php', '-d', 'display_errors=0', '/opt/kit/bin/invoke.php'];
@@ -397,12 +404,12 @@ final class Platform
         }
         $this->assertConformanceProfileCurrent($cert);
 
-        return ConformanceProfile::productionAllowed($cert['_package_id'], $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null);
+        return ConformanceProfile::productionAllowed($cert['_package_id'], $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null, $cert['_reviewed_profile'] ?? null);
     }
 
     private function assertConformanceProfileCurrent(array $cert): void
     {
-        if (($cert['_conformance_profile_sha256'] ?? null) !== ConformanceProfile::fingerprint($cert['_package_id'], $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null)) {
+        if (($cert['_conformance_profile_sha256'] ?? null) !== ConformanceProfile::fingerprint($cert['_package_id'], $cert['_package_version'] ?? '', $cert['_conformance_package_root'] ?? null, $cert['_reviewed_profile'] ?? null)) {
             throw new RuntimeException('conformance_profile_changed_after_certification');
         }
     }

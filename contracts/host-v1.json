@@ -382,12 +382,15 @@
     },
     "onboarding": {
         "requirements_file": "host-requirements.json",
-        "requirements_contract_version": 1,
+        "requirements_contract_version": 2,
         "publisher_assignment_required": true,
         "managed_http_profiles_reviewed_by_host": true,
         "matching_self_service_policy_for_requested_verification": true,
         "inbound_profiles_reviewed_by_host": true,
         "independent_certification_required": true,
+        "independent_profiles_internal_upload": true,
+        "independent_profile_exact_source": true,
+        "independent_profile_max_bytes": 262144,
         "internal_release_approval_required": true,
         "local_scenarios_authorize_vendor_access": false
     }

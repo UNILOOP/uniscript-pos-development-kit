@@ -1,0 +1,78 @@
+{
+  "contract_version": 2,
+  "package_id": "partner/aurora",
+  "transport_profiles": [
+    "aurora.identity"
+  ],
+  "verification_profile": "aurora.account",
+  "inbound_profiles": [
+    "aurora.callback"
+  ],
+  "definitions": {
+    "transport": {
+      "aurora.identity": {
+        "profile_version": 1,
+        "enabled": true,
+        "package_ids": [
+          "partner/aurora"
+        ],
+        "operations": [
+          "connection.test",
+          "health.probe"
+        ],
+        "method": "GET",
+        "base_url": "https://api.vendor.example.test",
+        "path": "/identity",
+        "account_key": "aurora",
+        "account_fields": {
+          "tenant": "tenant_id"
+        },
+        "config_headers": {
+          "X-Tenant": "tenant_id"
+        },
+        "authentication": {
+          "scheme": "header_secret",
+          "header": "X-API-Key",
+          "secret_field": "api_key"
+        },
+        "success_policy": "read_only_json"
+      }
+    },
+    "verification": {
+      "aurora.account": {
+        "profile_version": 1,
+        "enabled": true,
+        "package_ids": [
+          "partner/aurora"
+        ],
+        "transport_profile": "aurora.identity",
+        "principal_path": "user.id",
+        "success_path": "authenticated",
+        "success_value": true,
+        "account_response_bindings": {
+          "tenant.id": "tenant"
+        },
+        "synthetic_only": false
+      }
+    },
+    "inbound": {
+      "aurora.callback": {
+        "version": 1,
+        "authentication": "hmac_sha256",
+        "label": "Aurora callback",
+        "package_ids": [
+          "partner/aurora"
+        ],
+        "reference_field": "orderId",
+        "event_id_field": "eventId",
+        "account_fields": {
+          "tenantId": "tenant_id"
+        }
+      }
+    },
+    "policy": {
+      "self_service": true,
+      "verification_profile": "aurora.account"
+    }
+  }
+}

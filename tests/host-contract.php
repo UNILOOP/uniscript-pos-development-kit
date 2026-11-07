@@ -61,4 +61,16 @@ $requirements = ['contract_version' => 1, 'transport_profiles' => ['vendor.order
 $check(HostRequirements::parse(json_encode($requirements, JSON_THROW_ON_ERROR)) === $requirements, 'profile requests remain names only');
 $reject(static fn () => HostRequirements::parse(json_encode([...$requirements, 'secret' => 'forbidden'], JSON_THROW_ON_ERROR)), 'profile requests cannot grant credentials or definitions');
 $reject(static fn () => HostRequirements::parse(json_encode([...$requirements, 'transport_profiles' => ['https://attacker.example']], JSON_THROW_ON_ERROR)), 'profile requests cannot select URLs');
+$releaseProfiles = JsonDocument::decode(file_get_contents(__DIR__.'/fixtures/release-host-requirements.json'), true);
+$check(HostRequirements::parse(json_encode($releaseProfiles, JSON_THROW_ON_ERROR)) === $releaseProfiles, 'release declarations are portable packaging metadata');
+foreach (['owner', 'http', 'synthetic', 'policy'] as $case) {
+    $changed = $releaseProfiles;
+    match ($case) {
+        'owner' => $changed['definitions']['transport']['aurora.identity']['package_ids'] = ['other/vendor'],
+        'http' => $changed['definitions']['transport']['aurora.identity']['base_url'] = 'http://vendor.example.test',
+        'synthetic' => $changed['definitions']['transport']['aurora.identity']['allow_local_synthetic'] = true,
+        'policy' => $changed['definitions']['policy']['verification_profile'] = 'missing.profile',
+    };
+    $reject(static fn () => HostRequirements::parse(json_encode($changed, JSON_THROW_ON_ERROR)), 'unsafe release declaration denied:'.$case);
+}
 echo json_encode(['result' => 'passed', 'assertions' => $assertions], JSON_THROW_ON_ERROR)."\n";
