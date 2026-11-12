@@ -156,6 +156,15 @@
                     "service_request_bytes": 12582912,
                     "response_bytes": 12582912
                 }
+            },
+            "release_declared": {
+                "fields": [
+                    "invocation_bytes",
+                    "service_request_bytes",
+                    "response_bytes"
+                ],
+                "minimum_bytes": 1024,
+                "maximum_bytes": 12582912
             }
         },
         "ui_bytes": 2097152,

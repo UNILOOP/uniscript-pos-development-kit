@@ -58,8 +58,11 @@ final class HostRequirements
             $id = $requirements['package_id'];
             $definitions = $requirements['definitions'];
             if (!is_string($id) || !preg_match('/\A[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*\z/D', $id) || !is_array($definitions)
-                || array_diff(array_keys($definitions), ['transport', 'verification', 'inbound', 'policy']) !== []) {
+                || array_diff(array_keys($definitions), ['transport', 'verification', 'inbound', 'policy', 'limits']) !== []) {
                 throw new InvalidArgumentException('host_requirements_definitions');
+            }
+            if (array_key_exists('limits', $definitions)) {
+                PayloadLimits::declare($id, $definitions['limits']);
             }
             foreach (['transport', 'verification', 'inbound'] as $kind) {
                 if (!is_array($definitions[$kind] ?? null) || count($definitions[$kind]) > 32) {

@@ -49,6 +49,16 @@ try {
         sandboxDenied(fn () => $transport->profile('test.vendor', 'orders.submit'), $reason);
     }
     sandboxCheck($calls === 0, 'Malformed policy fails before any HTTP request');
+    $requirements = json_decode(file_get_contents(__DIR__.'/fixtures/release-host-requirements.json'), true, 32, JSON_THROW_ON_ERROR);
+    $owner = $requirements['package_id'];
+    $default = UniScript\Integration\PayloadLimits::serviceRequestForPackage($owner);
+    $requirements['definitions']['limits'] = ['service_request_bytes' => 524288];
+    UniScript\Integration\HostRequirements::parse(json_encode($requirements, JSON_THROW_ON_ERROR));
+    sandboxCheck($default === 131072 && UniScript\Integration\PayloadLimits::serviceRequestForPackage($owner) === 524288 && UniScript\Integration\PayloadLimits::forPackage($owner) === 1048576, 'A release declares only the payload budgets it changes');
+    sandboxCheck(UniScript\Integration\PayloadLimits::serviceRequestForPackage('other/package') === 131072, 'A declared budget applies only to its own package');
+    foreach ([['response_bytes' => 12582913], ['invocation_bytes' => 512], ['archive_bytes' => 4096], ['response_bytes' => '4096'], []] as $limits) {
+        sandboxDenied(fn () => UniScript\Integration\HostRequirements::parse(json_encode([...$requirements, 'definitions' => [...$requirements['definitions'], 'limits' => $limits]], JSON_THROW_ON_ERROR)), 'host_requirements_limits');
+    }
     echo 'Strict shared Sandbox descriptors: '.$sandboxChecks." checks passed.\n";
 } finally {
     sandboxRemove($root);

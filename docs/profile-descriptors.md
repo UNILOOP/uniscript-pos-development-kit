@@ -173,6 +173,18 @@ New integrations can include reviewed descriptors directly in `host-requirements
 
 Each profile must belong only to that package. Transport profiles use `profile_version: 1`, fixed HTTPS destinations, explicit operations, supported host-managed authentication, bounded portable `body_schema` for writes, account bindings, and explicit response evidence. Verification uses an authenticated GET identity endpoint and must prove every account field. The policy selects that verification profile and declares `self_service`. Inbound profiles use Basic, HMAC SHA-256, or a secret header and declare the reference, event, and account field paths. Secrets are stored by the host, never in the ZIP. Local synthetic exemptions and Laravel `body_rules` are not portable release declarations.
 
+### Payload budgets
+
+By default an invocation envelope and a runtime response are limited to 1 MiB each, and one host-service request to 128 KiB. A release that needs more, or wants a tighter bound, declares it under `definitions.limits`:
+
+```json
+"limits": { "service_request_bytes": 524288, "response_bytes": 4194304 }
+```
+
+- Fields: `invocation_bytes`, `service_request_bytes`, `response_bytes`. Declare only the ones you change; each is between 1024 and 12582912 bytes (12 MiB).
+- The declaration is reviewed with the release and applies to every connection running it. The local kit applies the same values once it loads the package manifest.
+- Do not raise a budget to carry the prescription PDF. Bind the document instead (see "Order documents in the request body"); bound documents do not count against these budgets.
+
 The internal uploader assigns the normalized publisher namespace. The quarantined release displays all declarations for internal review; build, certification, approval and promotion are still required. Uploading or running local scenarios alone grants no vendor access. Approved declarations are immutable and scoped to their original release, so upgrades and historical orders cannot silently acquire another package's access. Existing version 1 named registrations remain supported.
 
 The kit accepts version 2 metadata for linting, deterministic ZIP creation and isolated execution. Live local sandbox traffic still requires the operator-owned sandbox profile registry: declarations in an unapproved ZIP do not automatically enable network access. UniScript performs the complete authority validation at ZIP intake and approval.
