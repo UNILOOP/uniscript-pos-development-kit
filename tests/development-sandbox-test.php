@@ -106,6 +106,26 @@ try {
     $wireTransport = new DevelopmentSandboxTransport($root.'/wire.sqlite', [...$options, 'profiles' => ['test.vendor' => $wire]], $resolver, $sender);
     $wireResult = $wireTransport->request(sandboxEnvelope(), [...sandboxArguments(), 'body' => ['orderId' => 'synthetic-wire-order']], $configuration, $credentials, __DIR__);
     sandboxCheck($wireResult['status'] === 'accepted', 'Portable bounded wire schema supports vendor CamelCase without loosening ordinary package resource schemas');
+    $queryCalls = [];
+    $queryBodies = ['{"status":"ok","orders":[{"externalOrderId":"QRY-77"}]}', '{"status":"ok","orders":[]}', '{"status":"ok","orders":[{"externalOrderId":"QRY-77"}]}'];
+    $querySender = static function (array $request) use (&$queryCalls, &$queryBodies): array {
+        $queryCalls[] = $request;
+
+        return ['status' => 200, 'body' => array_shift($queryBodies)];
+    };
+    $querySubmit = [...sandboxProfile(), 'operations' => ['orders.submit'], 'path' => '/dis.Main', 'query' => ['n' => 'API'], 'success_path' => 'status', 'success_value' => 'ok', 'reference_path' => 'orders.0.externalOrderId'];
+    $queryStatus = [...sandboxProfile('GET', '/dis.Main'), 'operations' => ['orders.reconcile'], 'query' => ['n' => 'API', 'message' => '{"action":"getStatus","orders":["{external_reference}"]}'], 'success_path' => 'status', 'success_value' => 'ok', 'reference_path' => 'orders.0.externalOrderId'];
+    unset($queryStatus['success_policy']);
+    $queryTransport = new DevelopmentSandboxTransport($root.'/query.sqlite', [...$options, 'profiles' => ['test.vendor' => $querySubmit, 'test.status' => $queryStatus]], $resolver, $querySender);
+    $queryOwned = $queryTransport->request(sandboxEnvelope(), sandboxArguments(), $configuration, $credentials, __DIR__);
+    sandboxCheck($queryOwned['status'] === 'accepted' && $queryCalls[0]['endpoint']['url'] === 'https://vendor.example/dis.Main?n=API', 'Reviewed fixed query parameters are sent and a list position supplies the reference');
+    $statusArguments = ['profile' => 'test.status', 'operation_key' => 'orders.reconcile', 'idempotency_key' => 'query-status-unknown', 'parameters' => ['external_reference_handle' => $queryOwned['external_reference_handle']]];
+    $statusEnvelope = static fn (string $key): array => [...sandboxEnvelope('orders.reconcile', $key), 'input' => ['external_reference_handle' => $queryOwned['external_reference_handle']]];
+    $unknownOrder = $queryTransport->request($statusEnvelope('query-status-unknown'), $statusArguments, $configuration, $credentials, __DIR__);
+    sandboxCheck($unknownOrder['status'] === 'unknown' && $queryCalls[1]['endpoint']['url'] === 'https://vendor.example/dis.Main?n=API&message='.rawurlencode('{"action":"getStatus","orders":["QRY-77"]}'), 'Only the owned reference is substituted into the query, and a success flag without the order is not acceptance');
+    $matched = $queryTransport->request($statusEnvelope('query-status-known'), [...$statusArguments, 'idempotency_key' => 'query-status-known'], $configuration, $credentials, __DIR__);
+    sandboxCheck($matched['status'] === 'accepted' && $matched['external_reference_handle'] === $queryOwned['external_reference_handle'], 'A response naming the owned order confirms it');
+    sandboxDenied(fn () => $queryTransport->request($statusEnvelope('query-status-missing'), [...$statusArguments, 'idempotency_key' => 'query-status-missing', 'parameters' => []], $configuration, $credentials, __DIR__), 'sandbox_reference_not_owned');
     foreach (['127.0.0.1', '169.254.169.254', '10.1.2.3', '100.100.100.200', '192.168.1.1', '192.0.2.1', '224.0.0.1', '::1', '::ffff:127.0.0.1', 'fc00::1', '2001:db8::1'] as $ip) {
         $blocked = new DevelopmentSandboxTransport($root.'/blocked-'.md5($ip).'.sqlite', $options, static fn (): array => [$ip], $sender);
         sandboxDenied(fn () => $blocked->request(sandboxEnvelope(), sandboxArguments(), $configuration, $credentials, __DIR__), 'sandbox_private_destination_denied');

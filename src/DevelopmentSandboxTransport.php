@@ -99,7 +99,7 @@ final class DevelopmentSandboxTransport
         }
         $this->assertHostOwned($packageRoot);
         $profile = $this->profile($descriptor['transport_profile'] ?? '', 'connection.test');
-        if ($profile['method'] !== 'GET' || ($profile['success_policy'] ?? null) !== 'read_only_json' || str_contains($profile['path'], '{') || array_diff(array_keys($headers), ['X-UniScript-Challenge']) !== [] || (isset($headers['X-UniScript-Challenge']) && (! is_string($headers['X-UniScript-Challenge']) || ! preg_match('/\A[a-f0-9]{64}\z/D', $headers['X-UniScript-Challenge'])))) {
+        if ($profile['method'] !== 'GET' || ($profile['success_policy'] ?? null) !== 'read_only_json' || str_contains($profile['path'], '{') || self::needsReference($profile) || array_diff(array_keys($headers), ['X-UniScript-Challenge']) !== [] || (isset($headers['X-UniScript-Challenge']) && (! is_string($headers['X-UniScript-Challenge']) || ! preg_match('/\A[a-f0-9]{64}\z/D', $headers['X-UniScript-Challenge'])))) {
             throw new RuntimeException('sandbox_verification_read_profile_required');
         }
         $this->evidence = ['external_references' => [], 'network_access' => false];
@@ -110,7 +110,13 @@ final class DevelopmentSandboxTransport
         $deadline = gmdate('Y-m-d\TH:i:s\Z', min(time() + 10, strtotime($envelope['deadline'])));
         $requestHeaders += $this->authentication($profile, $credentials, $deadline);
 
-        return $this->send($this->endpoint(rtrim($profile['base_url'], '/').$profile['path']), 'GET', $requestHeaders, null, $deadline, 16384);
+        $endpoint = $this->endpoint(rtrim($profile['base_url'], '/').$profile['path']);
+        $query = self::resolvedQuery($profile, null);
+        if ($query !== []) {
+            $endpoint['url'] .= '?'.http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        }
+
+        return $this->send($endpoint, 'GET', $requestHeaders, null, $deadline, 16384);
     }
 
     public function evidence(): array
@@ -185,7 +191,7 @@ final class DevelopmentSandboxTransport
         $scope = $this->scope($envelope, $account);
         $path = $profile['path'];
         $known = null;
-        if (str_contains($path, '{external_reference}')) {
+        if (self::needsReference($profile)) {
             $known = $this->ownedReference($scope, $arguments['parameters']['external_reference_handle'] ?? '');
             $path = str_replace('{external_reference}', rawurlencode($known['reference']), $path);
         } elseif ($arguments['parameters'] !== []) {
@@ -193,6 +199,11 @@ final class DevelopmentSandboxTransport
         }
         $url = rtrim($profile['base_url'], '/').$path;
         $endpoint = $this->endpoint($url);
+        $query = self::resolvedQuery($profile, $known['reference'] ?? null);
+        if ($query !== []) {
+            $url .= '?'.http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+            $endpoint['url'] = $url;
+        }
         $headers = ['Accept' => 'application/json', 'User-Agent' => 'UniScript-POS-Developer-Kit-Sandbox/1', 'X-Request-ID' => $envelope['invocation_id'], 'X-Correlation-ID' => $envelope['correlation_id'], 'Idempotency-Key' => hash('sha256', $scope.':'.$envelope['idempotency_key'])];
         foreach ($profile['config_headers'] as $header => $field) {
             $headers[$header] = $this->scalar(self::value($configuration, $field), 'sandbox_configuration_header_invalid', 240);
@@ -251,7 +262,7 @@ final class DevelopmentSandboxTransport
 
     private function assertProfile(array $profile, array $envelope): void
     {
-        $allowed = ['key', 'profile_version', 'enabled', 'package_ids', 'operations', 'method', 'base_url', 'path', 'account_key', 'account_fields', 'numeric_account_fields', 'config_headers', 'authentication', 'allow_local_synthetic', 'body_schema', 'body_rules', 'body_account_bindings', 'body_invocation_projection', 'success_path', 'success_value', 'reference_path', 'success_policy', 'timezone_headers'];
+        $allowed = ['key', 'profile_version', 'enabled', 'package_ids', 'operations', 'method', 'base_url', 'path', 'account_key', 'account_fields', 'numeric_account_fields', 'config_headers', 'authentication', 'allow_local_synthetic', 'query', 'body_schema', 'body_rules', 'body_account_bindings', 'body_invocation_projection', 'success_path', 'success_value', 'reference_path', 'success_policy', 'timezone_headers'];
         if (array_diff(array_keys($profile), $allowed) !== []) {
             throw new InvalidArgumentException('sandbox_profile_fields_unsupported');
         }
@@ -272,6 +283,24 @@ final class DevelopmentSandboxTransport
             throw new InvalidArgumentException('sandbox_fixed_endpoint_required');
         }
         $this->endpoint(rtrim($profile['base_url'], '/').str_replace('{external_reference}', 'reference', $path), false);
+        $query = $profile['query'] ?? [];
+        if (! is_array($query) || count($query) > 16 || ($query !== [] && array_is_list($query))) {
+            throw new InvalidArgumentException('sandbox_query_invalid');
+        }
+        $queryBytes = 0;
+        foreach ($query as $name => $value) {
+            if (! is_string($name) || preg_match('/\A[A-Za-z_][A-Za-z0-9_.-]{0,79}\z/D', $name) !== 1
+                || ! is_string($value) || strlen($value) > 2048 || preg_match('/[\x00-\x1f\x7f]/', $value)) {
+                throw new InvalidArgumentException('sandbox_query_invalid');
+            }
+            $queryBytes += strlen($name) + strlen($value);
+        }
+        if ($queryBytes > 4096) {
+            throw new InvalidArgumentException('sandbox_query_invalid');
+        }
+        if (isset($profile['success_policy']) && ! in_array($profile['success_policy'], ['read_only_json', 'existing_reference_on_2xx'], true)) {
+            throw new InvalidArgumentException('sandbox_success_policy_unsupported');
+        }
         foreach ($profile['account_fields'] as $name => $field) {
             if (! self::field($name) || ! self::field($field) || preg_match('/(?:password|secret|token|credential|api_?key|authorization)/i', $field)) {
                 throw new InvalidArgumentException('sandbox_account_binding_invalid');
@@ -372,7 +401,7 @@ final class DevelopmentSandboxTransport
             throw new InvalidArgumentException('sandbox_read_profile_cannot_accept_orders');
         }
         foreach (['reference_path', 'success_path'] as $field) {
-            if (isset($profile[$field]) && ! self::field($profile[$field])) {
+            if (isset($profile[$field]) && ! self::responsePath($profile[$field])) {
                 throw new InvalidArgumentException('sandbox_response_binding_invalid');
             }
         }
@@ -794,6 +823,34 @@ final class DevelopmentSandboxTransport
         $remaining = (int) $bits % 8;
 
         return substr($ip, 0, $bytes) === substr($network, 0, $bytes) && ($remaining === 0 || (ord($ip[$bytes]) & (0xFF << (8 - $remaining))) === (ord($network[$bytes]) & (0xFF << (8 - $remaining))));
+    }
+
+    /** Dot path into a decoded JSON response; numeric segments select list positions. */
+    private static function responsePath(mixed $value): bool
+    {
+        return is_string($value) && strlen($value) <= 100 && preg_match('/\A[A-Za-z_][A-Za-z0-9_]*(?:\.(?:[A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,2})){0,7}\z/D', $value) === 1;
+    }
+
+    private static function needsReference(array $profile): bool
+    {
+        foreach ([$profile['path'] ?? '', ...array_values(is_array($profile['query'] ?? null) ? $profile['query'] : [])] as $template) {
+            if (is_string($template) && str_contains($template, '{external_reference}')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @return array<string, string> */
+    private static function resolvedQuery(array $profile, ?string $reference): array
+    {
+        $query = [];
+        foreach ($profile['query'] ?? [] as $name => $template) {
+            $query[$name] = $reference === null ? $template : str_replace('{external_reference}', $reference, $template);
+        }
+
+        return $query;
     }
 
     private static function field(mixed $value): bool

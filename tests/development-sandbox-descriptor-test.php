@@ -29,6 +29,15 @@ $cases = [
     'unknown invocation projection field' => [static fn (array $p): array => [...$p, 'body_invocation_projection' => ['update' => ['source' => 'parameters', 'extra' => true]]], 'sandbox_invocation_projection_invalid'],
     'invalid invocation projection path' => [static fn (array $p): array => [...$p, 'body_invocation_projection' => ['update' => ['source' => 'parameters', 'field_map' => ['carrier' => '../outside']]]], 'sandbox_invocation_projection_invalid'],
     'secret configuration account' => [static fn (array $p): array => [...$p, 'account_fields' => ['account' => 'api_token']], 'sandbox_account_binding_invalid'],
+    'query in the path' => [static fn (array $p): array => [...$p, 'path' => '/orders?n=API'], 'sandbox_fixed_endpoint_required'],
+    'query list' => [static fn (array $p): array => [...$p, 'query' => ['API']], 'sandbox_query_invalid'],
+    'query non-string value' => [static fn (array $p): array => [...$p, 'query' => ['n' => 1]], 'sandbox_query_invalid'],
+    'query header injection' => [static fn (array $p): array => [...$p, 'query' => ['n' => "API\r\nHost: other"]], 'sandbox_query_invalid'],
+    'query unsafe name' => [static fn (array $p): array => [...$p, 'query' => ['n&x' => 'API']], 'sandbox_query_invalid'],
+    'query oversized value' => [static fn (array $p): array => [...$p, 'query' => ['n' => str_repeat('a', 2049)]], 'sandbox_query_invalid'],
+    'wildcard response path' => [static fn (array $p): array => [...$p, 'reference_path' => 'orders.*.id'], 'sandbox_response_binding_invalid'],
+    'unbounded list position' => [static fn (array $p): array => [...$p, 'reference_path' => 'orders.1000.id'], 'sandbox_response_binding_invalid'],
+    'unknown success policy' => [static fn (array $p): array => [...$p, 'success_policy' => 'always'], 'sandbox_success_policy_unsupported'],
     'unknown path substitution' => [static fn (array $p): array => [...$p, 'path' => '/orders/{untrusted_account}'], 'sandbox_fixed_endpoint_required'],
 ];
 try {

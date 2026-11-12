@@ -60,6 +60,32 @@ After review, the host registers a descriptor under `pos-packages.host_services.
 
 Package calls provide only the profile name, matching operation/idempotency key, bounded body and an optional owned external-reference handle. The host chooses the URL and credentials. Only `{external_reference}` is a supported path substitution; the host resolves and encodes it from its own reference record. Configuration headers are explicit; version 1 profiles receive no automatic LifeFile numeric headers. Account values are exact strings unless the corresponding account name is included in `numeric_account_fields`.
 
+### Fixed query parameters
+
+Some vendors route every call through one endpoint and select the action in the query string. Declare those parameters in `query`; never put `?` in `path` or `base_url`.
+
+```json
+{
+  "method": "GET",
+  "path": "/dis.Main",
+  "query": {
+    "n": "API",
+    "message": "{\"action\":\"getStatus\",\"orders\":[\"{external_reference}\"]}"
+  }
+}
+```
+
+- Up to 16 parameters. Names match `[A-Za-z_][A-Za-z0-9_.-]{0,79}`; each value is a fixed string of at most 2048 bytes, and names plus values total at most 4096 bytes.
+- Values are reviewed with the release and are URL-encoded by the host (RFC 3986). Package code cannot add or change a parameter.
+- `{external_reference}` is the only substitution. When it appears in `path` or in any query value, the call must carry `parameters.external_reference_handle`, and the host inserts the provider reference it recorded for that handle.
+- A connection verification profile cannot use `{external_reference}`.
+
+### Response paths and list positions
+
+`success_path` and `reference_path` are dot paths into the decoded JSON response. A numeric segment (0-999) selects a list position, so `orders.0.externalOrderId` reads the first order of `{"orders": [{"externalOrderId": "..."}]}`. Up to eight segments; wildcards are not supported.
+
+When a profile addresses an owned reference and does not use `existing_reference_on_2xx`, the response must satisfy `success_path` and return the same reference at `reference_path`. A missing reference is reported as `managed_acceptance_unknown` and a different one as `managed_reference_mismatch`. Use this for status and reconciliation endpoints that answer "ok" even for orders they do not know: point `reference_path` at the order entry the vendor echoes back.
+
 `body_invocation_projection` governs non-reconcile order action payloads. It maps up to 16 reviewed body target paths to `{ "source": "input.relative.path", "field_map": { "sourceField": "vendorField" } }`; `source` is relative to invocation `input`, and `field_map` is optional and limited to 32 fields. The host compares the entire request body with the approved invocation projection before sending it. Packages cannot add fields or change approved action values.
 
 Mutation success creates durable host-owned acceptance evidence and an opaque reference handle. Unknown remote outcomes remain unknown; the host does not blindly repeat a write. `success_policy: "existing_reference_on_2xx"` supports approved amendments against an already owned reference.

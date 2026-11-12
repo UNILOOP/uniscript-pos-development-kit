@@ -60,6 +60,19 @@
       "pattern": "^/",
       "maxLength": 1024
     },
+    "query": {
+      "type": "object",
+      "description": "Reviewed fixed query parameters, URL-encoded by the host. A value may contain {external_reference}, which the host replaces with the owned provider reference.",
+      "maxProperties": 16,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,79}$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 2048
+      }
+    },
     "account_key": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9]*([._-][a-z0-9]+)*$",
@@ -229,7 +242,8 @@
     },
     "success_path": {
       "type": "string",
-      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*){0,5}$",
+      "description": "Dot path into the decoded JSON response; a numeric segment selects a list position.",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.([A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,2})){0,7}$",
       "maxLength": 100
     },
     "success_value": {
@@ -242,7 +256,8 @@
     },
     "reference_path": {
       "type": "string",
-      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*){0,5}$",
+      "description": "Dot path into the decoded JSON response; a numeric segment selects a list position.",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.([A-Za-z_][A-Za-z0-9_]*|0|[1-9][0-9]{0,2})){0,7}$",
       "maxLength": 100
     },
     "success_policy": {

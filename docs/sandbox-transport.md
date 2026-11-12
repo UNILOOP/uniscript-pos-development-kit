@@ -89,7 +89,7 @@ Replace example hosts, profile names and response bindings with the reviewed ven
 
 `body_schema` is the portable closed-object wire schema. Unsupported schema keywords fail before sending. Server-specific Laravel `body_rules` alone are not a portable live-kit request contract: provide the shared wire schema. Account body bindings must match the connection's saved account fields. `numeric_account_fields` normalizes only explicitly declared numeric identities; the kit never invents LifeFile-style account headers.
 
-Fixed paths may contain `{external_reference}` for an accepted reference handle owned by the original connection/account. Arbitrary paths, query strings, URLs and unscoped provider references from package code are rejected. `existing_reference_on_2xx` can acknowledge a mutation of that existing reference. `read_only_json` is restricted to GET operations that cannot provide order acceptance.
+Fixed paths may contain `{external_reference}` for an accepted reference handle owned by the original connection/account. A profile may also declare reviewed fixed `query` parameters; see [profile descriptors](profile-descriptors.md). Arbitrary paths, query strings, URLs and unscoped provider references from package code are rejected. `existing_reference_on_2xx` can acknowledge a mutation of that existing reference. `read_only_json` is restricted to GET operations that cannot provide order acceptance.
 
 ## Authentication
 
