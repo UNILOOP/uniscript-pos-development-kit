@@ -38,6 +38,9 @@ $cases = [
     'wildcard response path' => [static fn (array $p): array => [...$p, 'reference_path' => 'orders.*.id'], 'sandbox_response_binding_invalid'],
     'unbounded list position' => [static fn (array $p): array => [...$p, 'reference_path' => 'orders.1000.id'], 'sandbox_response_binding_invalid'],
     'unknown success policy' => [static fn (array $p): array => [...$p, 'success_policy' => 'always'], 'sandbox_success_policy_unsupported'],
+    'document binding on a read' => [static fn (array $p): array => [...$p, 'method' => 'GET', 'body_document_bindings' => ['pdfScript' => ['document' => 'prescription_pdf', 'required' => true]]], 'sandbox_document_binding_invalid'],
+    'unknown bound document' => [static fn (array $p): array => [...$p, 'body_document_bindings' => ['pdfScript' => ['document' => 'insurance_card', 'required' => true]]], 'sandbox_document_binding_invalid'],
+    'document binding without required flag' => [static fn (array $p): array => [...$p, 'body_document_bindings' => ['pdfScript' => ['document' => 'prescription_pdf']]], 'sandbox_document_binding_invalid'],
     'unknown path substitution' => [static fn (array $p): array => [...$p, 'path' => '/orders/{untrusted_account}'], 'sandbox_fixed_endpoint_required'],
 ];
 try {

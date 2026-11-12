@@ -126,6 +126,19 @@ try {
     $matched = $queryTransport->request($statusEnvelope('query-status-known'), [...$statusArguments, 'idempotency_key' => 'query-status-known'], $configuration, $credentials, __DIR__);
     sandboxCheck($matched['status'] === 'accepted' && $matched['external_reference_handle'] === $queryOwned['external_reference_handle'], 'A response naming the owned order confirms it');
     sandboxDenied(fn () => $queryTransport->request($statusEnvelope('query-status-missing'), [...$statusArguments, 'idempotency_key' => 'query-status-missing', 'parameters' => []], $configuration, $credentials, __DIR__), 'sandbox_reference_not_owned');
+    $documentCalls = [];
+    $documentSender = static function (array $request) use (&$documentCalls): array {
+        $documentCalls[] = $request;
+
+        return ['status' => 200, 'body' => '{"status":"accepted","id":"document-order-1"}'];
+    };
+    $documentProfile = [...sandboxProfile(), 'body_document_bindings' => ['pdfScript' => ['document' => 'prescription_pdf', 'required' => true]]];
+    $documentTransport = new DevelopmentSandboxTransport($root.'/document.sqlite', [...$options, 'profiles' => ['test.vendor' => $documentProfile]], $resolver, $documentSender);
+    sandboxDenied(fn () => $documentTransport->request(sandboxEnvelope(), [...sandboxArguments(), 'body' => [...sandboxArguments()['body'], 'pdfScript' => 'cGFja2FnZQ==']], $configuration, $credentials, __DIR__), 'resource_object_value');
+    $documentResult = $documentTransport->request(sandboxEnvelope(), sandboxArguments(), $configuration, $credentials, __DIR__);
+    $documentBody = json_decode($documentCalls[0]['body'], true);
+    sandboxCheck($documentResult['status'] === 'accepted' && base64_decode($documentBody['pdfScript'], true) === DevelopmentSandboxTransport::SYNTHETIC_PRESCRIPTION_PDF && $documentBody['order_id'] === 'synthetic-order', 'The host inserts the bound prescription PDF; the package never supplies it');
+    sandboxCheck($documentTransport->request(sandboxEnvelope(), sandboxArguments(), $configuration, $credentials, __DIR__) === $documentResult && count($documentCalls) === 1, 'A repeated bound submission replays its recorded outcome');
     foreach (['127.0.0.1', '169.254.169.254', '10.1.2.3', '100.100.100.200', '192.168.1.1', '192.0.2.1', '224.0.0.1', '::1', '::ffff:127.0.0.1', 'fc00::1', '2001:db8::1'] as $ip) {
         $blocked = new DevelopmentSandboxTransport($root.'/blocked-'.md5($ip).'.sqlite', $options, static fn (): array => [$ip], $sender);
         sandboxDenied(fn () => $blocked->request(sandboxEnvelope(), sandboxArguments(), $configuration, $credentials, __DIR__), 'sandbox_private_destination_denied');

@@ -80,6 +80,27 @@ Some vendors route every call through one endpoint and select the action in the 
 - `{external_reference}` is the only substitution. When it appears in `path` or in any query value, the call must carry `parameters.external_reference_handle`, and the host inserts the provider reference it recorded for that handle.
 - A connection verification profile cannot use `{external_reference}`.
 
+### Order documents in the request body
+
+Vendors that take the prescription PDF inline as Base64 do not receive it from the package. Declare the body field in `body_document_bindings` on the `orders.submit` profile and the host fills it when it sends the request.
+
+```json
+{
+  "method": "POST",
+  "path": "/orders",
+  "body_document_bindings": {
+    "pdfScript": { "document": "prescription_pdf", "required": true }
+  }
+}
+```
+
+- `prescription_pdf` is the order's prescription PDF: the sender's attached PDF, or the document the platform generates when the destination requires one and the order allows it. The limit is 8 MiB before encoding.
+- The package builds the rest of the body and leaves the bound field out. Supplying it is rejected. The field does not count against the package's request size limit, and it does not need a `body_schema` entry.
+- With `required: true` the submission stops before any vendor request when no usable PDF exists (`package_prescription_pdf_unavailable`). With `required: false` the field is omitted.
+- Bindings are accepted only on POST, PUT or PATCH profiles without a `success_policy`, and only for an order submission the host dispatched. Up to two fields may be bound.
+- The stored request keeps a checksum marker in place of the content. `input.order.documents.host_bound` is `true` for packages whose release declares a binding.
+- In the local sandbox the host inserts `DevelopmentSandboxTransport::SYNTHETIC_PRESCRIPTION_PDF`, a small valid PDF, so a mock vendor can assert the field arrives.
+
 ### Response paths and list positions
 
 `success_path` and `reference_path` are dot paths into the decoded JSON response. A numeric segment (0-999) selects a list position, so `orders.0.externalOrderId` reads the first order of `{"orders": [{"externalOrderId": "..."}]}`. Up to eight segments; wildcards are not supported.

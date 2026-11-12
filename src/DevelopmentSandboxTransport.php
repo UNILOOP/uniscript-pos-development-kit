@@ -12,6 +12,9 @@ use Throwable;
 /** Explicit trusted-operator Sandbox egress. Package code never supplies URLs, headers or auth. */
 final class DevelopmentSandboxTransport
 {
+    /** Stand-in for the order's prescription PDF; the production host inserts the real document. */
+    public const string SYNTHETIC_PRESCRIPTION_PDF = "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Count 1/Kids[3 0 R]>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 72 72]>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n";
+
     private readonly PDO $db;
 
     private readonly WorkbenchState $vault;
@@ -218,8 +221,19 @@ final class DevelopmentSandboxTransport
             $headers['x-timezone-offset'] = (string) (int) $offset;
         }
         $mutating = ($profile['success_policy'] ?? null) !== 'read_only_json';
-        $bytes = $profile['method'] === 'GET' ? null : json_encode($body === [] ? (object) [] : $body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
-        if ($bytes !== null && strlen($bytes) > PayloadLimits::serviceRequestForPackage($envelope['package_id'])) {
+        $wireBody = $body;
+        foreach ($profile['body_document_bindings'] ?? [] as $field => $binding) {
+            if ($envelope['operation'] !== 'orders.submit') {
+                throw new RuntimeException('sandbox_document_requires_order_submission');
+            }
+            if (self::value($body, $field) !== null) {
+                throw new RuntimeException('sandbox_document_field_is_host_owned');
+            }
+            self::set($wireBody, $field, base64_encode(self::SYNTHETIC_PRESCRIPTION_PDF));
+            self::set($body, $field, ['$document' => ['kind' => $binding['document'], 'sha256' => hash('sha256', self::SYNTHETIC_PRESCRIPTION_PDF), 'bytes' => strlen(self::SYNTHETIC_PRESCRIPTION_PDF), 'attachment' => 'synthetic']]);
+        }
+        $bytes = $profile['method'] === 'GET' ? null : json_encode($wireBody === [] ? (object) [] : $wireBody, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        if ($bytes !== null && ! isset($profile['body_document_bindings']) && strlen($bytes) > PayloadLimits::serviceRequestForPackage($envelope['package_id'])) {
             throw new InvalidArgumentException('sandbox_request_limit');
         }
         $fingerprint = hash('sha256', self::canonical([$body, $url, $profile, $account, $envelope['credential_revision']]));
@@ -262,7 +276,7 @@ final class DevelopmentSandboxTransport
 
     private function assertProfile(array $profile, array $envelope): void
     {
-        $allowed = ['key', 'profile_version', 'enabled', 'package_ids', 'operations', 'method', 'base_url', 'path', 'account_key', 'account_fields', 'numeric_account_fields', 'config_headers', 'authentication', 'allow_local_synthetic', 'query', 'body_schema', 'body_rules', 'body_account_bindings', 'body_invocation_projection', 'success_path', 'success_value', 'reference_path', 'success_policy', 'timezone_headers'];
+        $allowed = ['key', 'profile_version', 'enabled', 'package_ids', 'operations', 'method', 'base_url', 'path', 'account_key', 'account_fields', 'numeric_account_fields', 'config_headers', 'authentication', 'allow_local_synthetic', 'query', 'body_schema', 'body_rules', 'body_account_bindings', 'body_invocation_projection', 'body_document_bindings', 'success_path', 'success_value', 'reference_path', 'success_policy', 'timezone_headers'];
         if (array_diff(array_keys($profile), $allowed) !== []) {
             throw new InvalidArgumentException('sandbox_profile_fields_unsupported');
         }
@@ -300,6 +314,20 @@ final class DevelopmentSandboxTransport
         }
         if (isset($profile['success_policy']) && ! in_array($profile['success_policy'], ['read_only_json', 'existing_reference_on_2xx'], true)) {
             throw new InvalidArgumentException('sandbox_success_policy_unsupported');
+        }
+        if (isset($profile['body_document_bindings'])) {
+            $bindings = $profile['body_document_bindings'];
+            if (! is_array($bindings) || $bindings === [] || count($bindings) > 2 || array_is_list($bindings)
+                || ! in_array($profile['method'], ['POST', 'PUT', 'PATCH'], true) || isset($profile['success_policy'])) {
+                throw new InvalidArgumentException('sandbox_document_binding_invalid');
+            }
+            foreach ($bindings as $field => $binding) {
+                if (! is_string($field) || strlen($field) > 100 || preg_match('/\A[A-Za-z_][A-Za-z0-9_-]*(?:\.[A-Za-z_][A-Za-z0-9_-]*){0,5}\z/D', $field) !== 1
+                    || ! is_array($binding) || array_diff(array_keys($binding), ['document', 'required']) !== []
+                    || ($binding['document'] ?? null) !== 'prescription_pdf' || ! is_bool($binding['required'] ?? null)) {
+                    throw new InvalidArgumentException('sandbox_document_binding_invalid');
+                }
+            }
         }
         foreach ($profile['account_fields'] as $name => $field) {
             if (! self::field($name) || ! self::field($field) || preg_match('/(?:password|secret|token|credential|api_?key|authorization)/i', $field)) {
