@@ -2,6 +2,24 @@
 
 The pharmacy registers a host-owned endpoint with independent inbound credentials. Some vendors configure callbacks manually: share the URL and credentials securely with their team. Registration in UniScript does not mean the vendor has configured it.
 
+## Where the webhook URL and credentials come from
+
+A package cannot create or read them. For each pharmacy connection, a pharmacy user with permission to manage POS connections creates them in UniScript:
+
+1. Open **Package connections** for the pharmacy location and choose **Manage callbacks** on the connection.
+2. Choose **Create webhook URL** and pick the authentication method. The list shows the inbound profiles the installed release declares, for example a Basic profile.
+3. Choose **Generate credentials**, or type your own. Basic needs a username (3-120 characters, no colon) and a password of at least 24 characters.
+4. Copy the generated username and password into the vendor portal before creating the URL. UniScript stores them encrypted and never shows them again.
+5. Create the URL, then copy it from the endpoint row into the vendor portal.
+
+Things to know before relying on it:
+
+- The section appears only when the release is certified for `inbound.decode` and inbound callbacks are enabled for the environment.
+- There is one URL per endpoint. To change credentials, disable the endpoint and create a new one; the URL changes, so update the vendor portal.
+- Callbacks must be JSON, at most 64 KiB, with at most 100 events.
+- A callback is applied only when it names an order this connection submitted, and when every account field the profile declares matches the connection. Numeric account ids ignore leading zeros; any other id must match exactly, including case. Anything else is held for review as `callback_ownership_unresolved`.
+- A vendor that verifies the registered webhook during account checks (for example by requiring Basic authentication) passes once the same URL, username and password are saved in its portal.
+
 ## Callback flow
 
 1. Authenticate before creating a receipt.
