@@ -348,22 +348,7 @@ final class Platform
             if ($deployment['environment'] !== 'production') {
                 throw new RuntimeException('production_not_enabled');
             }
-            $cert = $this->read('certifications', $deployment['_input']['certification_id']);
-            if (($cert['status'] ?? null) !== 'passed' || ($cert['execution_uuid'] ?? null) !== $deployment['execution_uuid']
-                || ($cert['_package_id'] ?? null) !== $deployment['_package_id'] || ! self::sameDigests($cert['digests'] ?? null, $deployment['digests'])
-                || ($cert['source_sha256'] ?? null) !== $deployment['source_sha256']
-                || ($cert['digests']['executable_image_sha256'] ?? null) !== $deployment['executable_image_sha256']
-                || ($cert['certification_summary']['operations'] ?? null) !== $deployment['_operations']
-                || ($deployment['_package_version'] ?? $cert['_package_version'] ?? '') !== ($cert['_package_version'] ?? '')) {
-                throw new RuntimeException('deployment_binding_mismatch');
-            }
-            $this->assertConformanceProfileCurrent($cert);
-            if (($deployment['_conformance_profile_sha256'] ?? null) !== ($cert['_conformance_profile_sha256'] ?? null)) {
-                throw new RuntimeException('conformance_profile_changed_after_certification');
-            }
-            if (! $this->productionEnabled($cert)) {
-                throw new RuntimeException('production_not_enabled');
-            }
+            $this->assertProductionBinding($deployment);
         }
         if (! in_array($envelope['operation'], $deployment['_operations'], true)) {
             return new Result('unsupported_operation', 'operation.not_certified');
@@ -395,6 +380,62 @@ final class Platform
 
             return $decoded;
         });
+    }
+
+    /** Everything a production invocation requires of a deployment and its certificate, apart from the running image. */
+    private function assertProductionBinding(array $deployment): void
+    {
+        $cert = $this->read('certifications', $deployment['_input']['certification_id']);
+        if (($cert['status'] ?? null) !== 'passed' || ($cert['execution_uuid'] ?? null) !== $deployment['execution_uuid']
+            || ($cert['_package_id'] ?? null) !== $deployment['_package_id'] || ! self::sameDigests($cert['digests'] ?? null, $deployment['digests'])
+            || ($cert['source_sha256'] ?? null) !== $deployment['source_sha256']
+            || ($cert['digests']['executable_image_sha256'] ?? null) !== $deployment['executable_image_sha256']
+            || ($cert['certification_summary']['operations'] ?? null) !== $deployment['_operations']
+            || ($deployment['_package_version'] ?? $cert['_package_version'] ?? '') !== ($cert['_package_version'] ?? '')) {
+            throw new RuntimeException('deployment_binding_mismatch');
+        }
+        $this->assertConformanceProfileCurrent($cert);
+        if (($deployment['_conformance_profile_sha256'] ?? null) !== ($cert['_conformance_profile_sha256'] ?? null)) {
+            throw new RuntimeException('conformance_profile_changed_after_certification');
+        }
+        if (! $this->productionEnabled($cert)) {
+            throw new RuntimeException('production_not_enabled');
+        }
+    }
+
+    /**
+     * Read-only check run before this kit version takes over an existing ledger: every ready deployment must still
+     * be invocable by this code. Returns one entry per deployment that would be refused.
+     *
+     * @return list<array{deployment: string, package_id: ?string, environment: ?string, reason: string}>
+     */
+    public function ledgerIncompatibilities(): array
+    {
+        $refused = [];
+        foreach (glob($this->state.'/deployments/*.json') ?: [] as $file) {
+            $deployment = json_decode((string) file_get_contents($file), true, 32, JSON_THROW_ON_ERROR);
+            if (! is_array($deployment) || ($deployment['status'] ?? null) !== 'ready') {
+                continue;
+            }
+            try {
+                foreach (['execution_uuid', '_package_id', 'environment', '_container', 'executable_image_sha256'] as $key) {
+                    if (! is_string($deployment[$key] ?? null) || $deployment[$key] === '') {
+                        throw new RuntimeException('deployment_record_incomplete');
+                    }
+                }
+                if (! is_array($deployment['_operations'] ?? null)) {
+                    throw new RuntimeException('deployment_record_incomplete');
+                }
+                if ($deployment['environment'] === 'production') {
+                    $this->assertProductionBinding($deployment);
+                }
+            } catch (\Throwable $exception) {
+                $refused[] = ['deployment' => basename($file, '.json'), 'package_id' => is_string($deployment['_package_id'] ?? null) ? $deployment['_package_id'] : null,
+                    'environment' => is_string($deployment['environment'] ?? null) ? $deployment['environment'] : null, 'reason' => $exception->getMessage()];
+            }
+        }
+
+        return $refused;
     }
 
     private function productionEnabled(array $cert): bool
