@@ -83,11 +83,11 @@ final class ConformanceProfile
     public static function serviceResponse(string $packageId, array $scenario, array $request, SyntheticHost $host): array
     {
         $host->authorize($request);
-        if (isset($scenario['expected_event']) && $request['service'] === 'commands' && $request['action'] === 'propose' && ($request['arguments'] ?? null) !== ['command' => 'normalized_event', 'receipt_handle' => $scenario['input']['receipt_handle'], 'event' => $scenario['expected_event']]) {
+        if (isset($scenario['expected_event']) && $request['service'] === 'commands' && $request['action'] === 'propose' && ! self::matches($request['arguments'] ?? null, ['command' => 'normalized_event', 'receipt_handle' => $scenario['input']['receipt_handle'], 'event' => $scenario['expected_event']])) {
             throw new RuntimeException('conformance_callback_projection');
         }
         if ($request['service'] === 'http' && $request['action'] === 'request') {
-            if (isset($scenario['expected_http_body']) && ($request['arguments']['body'] ?? null) !== $scenario['expected_http_body']) {
+            if (isset($scenario['expected_http_body']) && ! self::matches($request['arguments']['body'] ?? null, $scenario['expected_http_body'])) {
                 throw new RuntimeException('conformance_http_body');
             }
             foreach ([...($scenario['expected_http_projection'] ?? []), ...($scenario['expected_http_by_operation'][$request['arguments']['parameters']['operation_id'] ?? ''] ?? [])] as $path => $expectedValue) {
@@ -98,7 +98,7 @@ final class ConformanceProfile
                     }
                     $actual = $actual[$part];
                 }
-                if ($actual !== $expectedValue) {
+                if (! self::matches($actual, $expectedValue)) {
                     throw new RuntimeException('conformance_http_projection_mismatch:'.$path);
                 }
             }
@@ -132,6 +132,27 @@ final class ConformanceProfile
         return $host->transport($request);
     }
 
+    /**
+     * Exact comparison of JSON values that ignores object key order, which carries no meaning in JSON and is not
+     * preserved by every store or transport. List order, types and every value still have to match.
+     */
+    public static function matches(mixed $actual, mixed $expected): bool
+    {
+        return self::canonical($actual) === self::canonical($expected);
+    }
+
+    private static function canonical(mixed $value): mixed
+    {
+        if (! is_array($value)) {
+            return $value;
+        }
+        if (! array_is_list($value)) {
+            ksort($value, SORT_STRING);
+        }
+
+        return array_map(self::canonical(...), $value);
+    }
+
     public static function verify(string $operation, array $scenario, Result $result, string $packageId, array $calls = [], array $requests = []): void
     {
         if ($result->kind !== $scenario['kind']) {
@@ -156,7 +177,7 @@ final class ConformanceProfile
                     $actualEvents[] = $request['arguments']['event'] ?? null;
                 }
             }
-            if ($actualEvents !== $scenario['expected_events']) {
+            if (! self::matches($actualEvents, $scenario['expected_events'])) {
                 throw new RuntimeException('conformance_callback_batch_projection');
             }
         }
@@ -168,14 +189,14 @@ final class ConformanceProfile
                 }
                 $actual = $actual[$part];
             }
-            if ($actual !== $expected) {
+            if (! self::matches($actual, $expected)) {
                 throw new RuntimeException('conformance_result_projection_mismatch:'.$path);
             }
         }
         if ($result->kind === 'validation_rejection') {
             return;
         }
-        if (isset($scenario['expected_proposals']) && ($result->data['proposals'] ?? null) !== $scenario['expected_proposals']) {
+        if (isset($scenario['expected_proposals']) && ! self::matches($result->data['proposals'] ?? null, $scenario['expected_proposals'])) {
             throw new RuntimeException('conformance_catalog_projection');
         }
         if ($operation === 'identity.describe' && ($result->data['package_id'] ?? null) !== $packageId) {

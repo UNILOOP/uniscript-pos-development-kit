@@ -26,6 +26,27 @@ $check($oldEpiq === ConformanceProfile::fingerprint('uniscript/epiq-connect', '1
 $reordered = array_reverse($profile, true);
 $reordered['scenarios'] = array_reverse(array_map(static fn (array $scenarios): array => array_map(static fn (array $scenario): array => array_reverse($scenario, true), $scenarios), $profile['scenarios']), true);
 $check($reordered !== $profile && ReviewedConformance::fingerprint($reordered) === ReviewedConformance::fingerprint($profile), 'A store that reorders object keys never changes the fingerprint');
+$body = ['patient' => ['first' => 'Ada', 'last' => 'Park'], 'items' => [['ndc' => '1', 'qty' => 2], ['ndc' => '2', 'qty' => 1]]];
+$storedBody = ['items' => [['qty' => 2, 'ndc' => '1'], ['qty' => 1, 'ndc' => '2']], 'patient' => ['last' => 'Park', 'first' => 'Ada']];
+$check($body !== $storedBody && ConformanceProfile::matches($body, $storedBody), 'Expectations returned by a key-reordering store still match the package output');
+$check(! ConformanceProfile::matches($body, [...$storedBody, 'items' => array_reverse($storedBody['items'])]), 'List order remains part of an expectation');
+$check(! ConformanceProfile::matches(['qty' => 2], ['qty' => '2']) && ! ConformanceProfile::matches(['qty' => 2], ['qty' => 2, 'extra' => null]), 'Types and extra fields still fail an expectation');
+$use = static fn (Closure $verify): bool => (static function () use ($verify): bool {
+    try {
+        $verify();
+
+        return true;
+    } catch (RuntimeException) {
+        return false;
+    }
+})();
+$accepted = new UniScript\Integration\Result('remote_acceptance', 'accepted', ['external_reference_handle' => 'synthetic', 'detail' => $body]);
+$check($use(static fn () => ConformanceProfile::verify('orders.submit', ['kind' => 'remote_acceptance', 'expected_result_projection' => ['data.detail' => $storedBody]], $accepted, 'partner/new-pos')), 'Result projections ignore object key order');
+$check(! $use(static fn () => ConformanceProfile::verify('orders.submit', ['kind' => 'remote_acceptance', 'expected_result_projection' => ['data.detail' => [...$storedBody, 'patient' => ['first' => 'Ada']]]], $accepted, 'partner/new-pos')), 'Result projections still reject a different value');
+$propose = static fn (array $event): array => ['service' => 'commands', 'action' => 'propose', 'arguments' => ['command' => 'normalized_event', 'receipt_handle' => 'receipt', 'event' => $event]];
+$decoded = new UniScript\Integration\Result('success', 'decoded', ['applied' => false]);
+$check($use(static fn () => ConformanceProfile::verify('inbound.decode', ['kind' => 'success', 'input' => ['receipt_handle' => 'receipt'], 'expected_events' => [$storedBody]], $decoded, 'partner/new-pos', [], [$propose($body)])), 'Callback events ignore object key order');
+$check(! $use(static fn () => ConformanceProfile::verify('inbound.decode', ['kind' => 'success', 'input' => ['receipt_handle' => 'receipt'], 'expected_events' => [$storedBody]], $decoded, 'partner/new-pos', [], [$propose([...$body, 'patient' => []])])), 'Callback events still reject a different event');
 $changedOrder = $profile;
 $changedOrder['scenarios']['orders.submit'] = array_reverse($profile['scenarios']['orders.submit']);
 $check(ReviewedConformance::fingerprint($changedOrder) !== ReviewedConformance::fingerprint($profile), 'Scenario order remains part of the fingerprint');
