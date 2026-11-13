@@ -23,6 +23,12 @@ $check(! ConformanceProfile::productionAllowed($profile['package_id'], '1.0.0'),
 $check(ConformanceProfile::productionAllowed($profile['package_id'], '1.0.0', null, $profile), 'Operator-reviewed exact source permits production scope');
 $check(ConformanceProfile::fingerprint($profile['package_id'], '1.0.0', null, $profile) === ReviewedConformance::fingerprint($profile), 'Profile has an immutable isolated fingerprint');
 $check($oldEpiq === ConformanceProfile::fingerprint('uniscript/epiq-connect', '1.0.1'), 'A new vendor never changes an existing certificate fingerprint');
+$reordered = array_reverse($profile, true);
+$reordered['scenarios'] = array_reverse(array_map(static fn (array $scenarios): array => array_map(static fn (array $scenario): array => array_reverse($scenario, true), $scenarios), $profile['scenarios']), true);
+$check($reordered !== $profile && ReviewedConformance::fingerprint($reordered) === ReviewedConformance::fingerprint($profile), 'A store that reorders object keys never changes the fingerprint');
+$changedOrder = $profile;
+$changedOrder['scenarios']['orders.submit'] = array_reverse($profile['scenarios']['orders.submit']);
+$check(ReviewedConformance::fingerprint($changedOrder) !== ReviewedConformance::fingerprint($profile), 'Scenario order remains part of the fingerprint');
 foreach (['source', 'package', 'readiness', 'service', 'negative', 'positive', 'forged acceptance', 'object call'] as $case) {
     $changed = $profile;
     match ($case) {

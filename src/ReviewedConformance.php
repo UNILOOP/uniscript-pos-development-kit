@@ -57,8 +57,18 @@ final class ReviewedConformance
         return $profile;
     }
 
+    /** Independent of object key order, so a profile keeps one fingerprint however a store or transport orders its keys. */
     public static function fingerprint(array $profile): string
     {
-        return hash('sha256', json_encode($profile, JSON_THROW_ON_ERROR));
+        return hash('sha256', json_encode(self::canonical($profile), JSON_THROW_ON_ERROR));
+    }
+
+    private static function canonical(array $value): array
+    {
+        if (! array_is_list($value)) {
+            ksort($value, SORT_STRING);
+        }
+
+        return array_map(static fn (mixed $child): mixed => is_array($child) ? self::canonical($child) : $child, $value);
     }
 }
