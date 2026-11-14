@@ -16,6 +16,32 @@ The kit rejects an unsafe mapping schema before building or exporting, and the i
 
 Start with synthetic fixtures in `fixtures/`, not real patient exports. Package input is a host snapshot, not an arbitrary database model. Validate patient/prescriber/contact/address/medication/product/shipping/quantity fields as required by the vendor. Do not invent defaults that change clinical meaning.
 
+### Medication lines
+
+Each entry of `order.medications` is one line to dispense. The host sends these fields:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `line_key`, `medication_handle`, `line_number` | string, string, integer | Stable identity of the line. A package component line has `package_component: true` and its own `line_key`. |
+| `name` | string or null | The pharmacy's own catalog label for the item, at most 240 characters. It is a default, not the vendor's product name. |
+| `identity` | object | `kind` (`catalog_item`, `supply`, `compound`, `custom`) and opaque handles. Never a database id. |
+| `quantity` | decimal string | For example `"30"` or `"0.2500"`. Convert it yourself; do not require a JSON number. |
+| `quantity_unit` | string or null | |
+| `days_supply` | integer string | For example `"30"`. |
+| `refills` | integer | |
+| `directions` | string or null | |
+| `date_written` | `YYYY-MM-DD` or null | |
+| `is_otc`, `source_type`, `rx_type` | boolean, string, string | |
+| `mapping` | object | The approved values of your own `order_mapping` schema for this item. |
+
+There is no `description` field. If the vendor needs an exact product name, or any other per-item value the pharmacy keeps in its POS, declare it in your `order_mapping` schema and prefer it over the host default:
+
+```php
+$description = $line['mapping']['description'] ?? $line['name'] ?? '';
+```
+
+The sample orders in `fixtures/` are for local development. Where a sample shows a number and this table says string, the table describes what the host sends.
+
 The flow is validation → immutable dispatch → governed HTTP request → recorded remote outcome → host acceptance or recovery. Reusing the same command/idempotency identity must not create another vendor order. If acceptance may have occurred before a timeout, reconcile; do not blindly retry submission.
 
 The workbench uses the generic reference integration first. Vendor-specific fixtures can exercise a different package without modifying workbench UI or adding vendor conditionals. LifeFile compatibility is a separate fixture run, not a prerequisite for a developer's own package.
