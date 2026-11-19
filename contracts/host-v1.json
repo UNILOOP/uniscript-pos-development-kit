@@ -275,7 +275,8 @@
             "editable",
             "schema",
             "values",
-            "credentials_host_owned"
+            "credentials_host_owned",
+            "credential_renewal"
         ],
         "config.save": [
             "host_reload_required"

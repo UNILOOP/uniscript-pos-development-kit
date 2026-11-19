@@ -5,7 +5,8 @@
     "editable",
     "schema",
     "values",
-    "credentials_host_owned"
+    "credentials_host_owned",
+    "credential_renewal"
   ],
   "properties": {
     "editable": {
@@ -31,6 +32,43 @@
     },
     "credentials_host_owned": {
       "const": true
+    },
+    "credential_renewal": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Optional host-managed API credential renewal status. Never contains credentials. Null when the host does not provide renewal for this integration.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        },
+        "renew_after_days": {
+          "type": "integer"
+        },
+        "last_rotated_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expires_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "next_rotation_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

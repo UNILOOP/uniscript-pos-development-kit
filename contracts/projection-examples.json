@@ -25,7 +25,8 @@
     "values": {
       "account_id": "synthetic-account"
     },
-    "credentials_host_owned": true
+    "credentials_host_owned": true,
+    "credential_renewal": null
   },
   "config.save": {
     "host_reload_required": true
