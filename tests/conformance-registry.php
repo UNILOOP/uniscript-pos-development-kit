@@ -42,6 +42,10 @@ try {
     foreach (['identity.describe', 'configuration.validate', 'health.probe', 'connection.test', 'orders.validate', 'orders.submit', 'orders.reconcile', 'epiq.prescriptions.stage', 'epiq.api.execute', 'reference.refresh', 'catalog.preview', 'inbound.decode'] as $operation) {
         $check(ConformanceProfile::scenarios($operation, 'uniscript/epiq-connect', 2, '1.0.0') !== [], 'Reviewed handler coverage '.$operation);
     }
+    foreach (['orders.validate', 'orders.submit', 'epiq.prescriptions.stage'] as $operation) {
+        $scenario = ConformanceProfile::scenarios($operation, 'uniscript/epiq-connect', 2, '1.0.3')[0];
+        $check($scenario['input']['order']['patient']['riskFactors']['allergies'] === 'none', 'Synthetic Epiq patient has an explicit allergy declaration '.$operation);
+    }
     $denied(fn () => ConformanceProfile::scenarios('undeclared.operation', 'uniscript/epiq-connect', 2, '1.0.0'), 'trusted_scenario_not_available:undeclared.operation');
     $profile = ['package_id' => 'acme/vendor', 'min_version' => '1.0.0', 'max_version_exclusive' => '2.0.0', 'scenario_file' => 'scenarios.json', 'readiness_operation' => 'identity.describe'];
     $registry = ['version' => 1, 'profiles' => [$profile]];
