@@ -236,7 +236,12 @@ final class ConformanceProfile
             return [...$profile, 'sha256' => ReviewedConformance::fingerprint($profile)];
         }
         $override = getenv('POS_KIT_CONFORMANCE_REGISTRY');
-        $path = is_string($override) && $override !== '' ? $override : dirname(__DIR__).'/fixtures/reviewed-conformance-registry.json';
+        $hasOverride = is_string($override) && $override !== '';
+        // The registry and scenario bytes are bound to issued certificates.
+        $usesUpdatedEpiqScenarios = $packageId === 'uniscript/epiq-connect' && $packageVersion !== ''
+            && version_compare($packageVersion, '1.0.3', '>=');
+        $builtInDirectory = $usesUpdatedEpiqScenarios ? 'fixtures/epiq-1-0-3' : 'fixtures';
+        $path = $hasOverride ? $override : dirname(__DIR__).'/'.$builtInDirectory.'/reviewed-conformance-registry.json';
         if (is_string($override) && $override !== '' && $packageRoot === null) {
             throw new RuntimeException('conformance_package_root_required');
         }

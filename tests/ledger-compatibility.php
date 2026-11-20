@@ -19,6 +19,7 @@ $check = static function (bool $valid, string $reason) use (&$checks): void {
 // Certificates already issued by deployed platforms carry these values. A kit change that alters one of them would
 // refuse every live production invocation of that package, so the values are pinned rather than recomputed.
 $check(ConformanceProfile::fingerprint('uniscript/epiq-connect', '1.0.1') === '58de42302965964b12228eb0b6ae1db2fb575842c473552517a84545c318ce4f', 'The Epiq certificate fingerprint issued to live deployments must not change');
+$check(ConformanceProfile::fingerprint('uniscript/epiq-connect', '1.0.3') === '11e5964c894a1eca4ac69c52a78885e06b2c89818c3c313e599b5019bfc3d20e', 'Updated Epiq certificates keep the fingerprint of the allergy-aware scenarios');
 $check(ConformanceProfile::fingerprint('uniscript/lifefile-v2', '2.1.5') === null, 'LifeFile v2 certificates stay bound to the built-in profile without a registry fingerprint');
 
 $state = sys_get_temp_dir().'/kit-ledger-'.bin2hex(random_bytes(6));

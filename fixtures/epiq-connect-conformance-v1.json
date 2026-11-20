@@ -114,9 +114,6 @@
               "identity": {
                 "driverLicenseNumber": "TEST0000001",
                 "driverLicenseState": "CA"
-              },
-              "riskFactors": {
-                "allergies": "none"
               }
             },
             "prescriber": {
@@ -199,9 +196,6 @@
               "identity": {
                 "driverLicenseNumber": "TEST0000001",
                 "driverLicenseState": "CA"
-              },
-              "riskFactors": {
-                "allergies": "none"
               }
             },
             "prescriber": {
@@ -340,9 +334,6 @@
               "identity": {
                 "driverLicenseNumber": "TEST0000001",
                 "driverLicenseState": "CA"
-              },
-              "riskFactors": {
-                "allergies": "none"
               }
             },
             "prescriber": {
